@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# existing Python entries already here...
+# Secret keys — never commit these
+.env
