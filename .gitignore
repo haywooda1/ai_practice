@@ -220,3 +220,4 @@ __marimo__/
 # existing Python entries already here...
 # Secret keys — never commit these
 .env
+cover_letters/
