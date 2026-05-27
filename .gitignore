@@ -221,3 +221,4 @@ __marimo__/
 # Secret keys — never commit these
 .env
 cover_letters/
+venv/
