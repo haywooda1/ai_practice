@@ -1,7 +1,7 @@
 import os
 import anthropic
 import yfinance as yf
-# Adding for GMAIL support
+# Input for EMAIL ability with GMAIL
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -226,21 +226,21 @@ Important guidelines:
         }]
     )
     return message.content[0].text
-# Adding def for GMAIL
+# creating Defintion for emailing
 def send_email_report(report_text, ai_analysis):
     """Email the portfolio report to Gmail."""
     gmail_address  = os.getenv("GMAIL_ADDRESS")
     gmail_password = os.getenv("GMAIL_APP_PASSWORD")
 
     if not gmail_address or not gmail_password:
-        print("  ⚠️  Gmail credentials not found in .env - skipping email")
+        print("  ⚠️  Gmail credentials not found in .env — skipping email")
         return
 
     print("\n📧 Sending report to Gmail...")
 
     # Build email
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"📈 Portfolio Report - {datetime.now().strftime('%A, %B %d, %Y')}"
+    msg["Subject"] = f"📈 Portfolio Report — {datetime.now().strftime('%A, %B %d, %Y')}"
     msg["From"]    = gmail_address
     msg["To"]      = gmail_address
 
@@ -312,9 +312,8 @@ def main():
     print(f"  AI ANALYSIS")
     print(f"{'='*60}")
     print(ai_analysis)
-#
-# EMAIL Send
-    send_email_report(full_report, ai_analysis)
+# Adding for sending email report
+send_email_report(full_report, ai_analysis)
 #
     # Save report
     os.makedirs("portfolio_reports", exist_ok=True)
