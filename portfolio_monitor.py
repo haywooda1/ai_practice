@@ -358,19 +358,19 @@ def build_html_email(all_cards, portfolio_cost, portfolio_value, ai_analysis):
                         text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">
                 Portfolio Totals — excl. NTAP mixed lots
             </div>
-            <div style="display:flex;gap:32px;flex-wrap:wrap;">
+            <div style="display:flex;gap:56px;flex-wrap:wrap;">
                 <div>
-                    <div style="font-size:11px;color:#16a34a">Total Invested</div>
+                    <div style="font-size:11px;color:#16a34a;margin-bottom:4px">Total Invested</div>
                     <div style="font-size:20px;font-weight:700;color:#111">
                         {format_currency(portfolio_cost)}</div>
                 </div>
                 <div>
-                    <div style="font-size:11px;color:#16a34a">Current Value</div>
+                    <div style="font-size:11px;color:#16a34a;margin-bottom:4px">Current Value</div>
                     <div style="font-size:20px;font-weight:700;color:#111">
                         {format_currency(portfolio_value)}</div>
                 </div>
                 <div>
-                    <div style="font-size:11px;color:#16a34a">Total Gain / Loss</div>
+                    <div style="font-size:11px;color:#16a34a;margin-bottom:4px">Total Gain / Loss</div>
                     <div style="font-size:20px;font-weight:700;color:{gain_color}">
                         {format_currency(total_gain)}
                         <span style="font-size:14px;">({format_pct(total_gain_pct)})</span>
