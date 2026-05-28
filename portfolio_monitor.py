@@ -360,17 +360,20 @@ def build_html_email(all_cards, portfolio_cost, portfolio_value, ai_analysis):
             </div>
             <div style="display:flex;gap:56px;flex-wrap:wrap;">
                 <div>
-                    <div style="font-size:11px;color:#16a34a;margin-bottom:4px">Total Invested</div>
+	            <div style="min-width:100px;padding:8px 24px 8px 0;margin-right:24px;border-right:1px solid #bbf7d0;">
+                    <div style="font-size:11px;color:#16a34a;margin-bottom:6px">Total Invested</div>
                     <div style="font-size:20px;font-weight:700;color:#111">
                         {format_currency(portfolio_cost)}</div>
                 </div>
                 <div>
-                    <div style="font-size:11px;color:#16a34a;margin-bottom:4px">Current Value</div>
-                    <div style="font-size:20px;font-weight:700;color:#111">
+	            <div style="min-width:100px;padding:8px 24px 8px 0;margin-right:24px;border-right:1px solid #bbf7d0;">
+                    <div style="font-size:11px;color:#16a34a;margin-bottom:6px">Current Value</div>
+                    <div style="font-size:20px;font-weight:700;color:#111;gap:10px">
                         {format_currency(portfolio_value)}</div>
                 </div>
                 <div>
-                    <div style="font-size:11px;color:#16a34a;margin-bottom:4px">Total Gain / Loss</div>
+	            <div style="min-width:100px;padding:8px 24px 8px 0;margin-right:24px;border-right:1px solid #bbf7d0;">
+                    <div style="font-size:11px;color:#16a34a;margin-bottom:6px">Total Gain / Loss</div>
                     <div style="font-size:20px;font-weight:700;color:{gain_color}">
                         {format_currency(total_gain)}
                         <span style="font-size:14px;">({format_pct(total_gain_pct)})</span>
