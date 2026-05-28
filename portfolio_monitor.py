@@ -226,7 +226,7 @@ Important guidelines:
         }]
     )
     return message.content[0].text
-# creating Defintion for emailing
+# creating Definition for emailing
 def send_email_report(report_text, ai_analysis):
     """Email the portfolio report to Gmail."""
     gmail_address  = os.getenv("GMAIL_ADDRESS")
@@ -312,9 +312,9 @@ def main():
     print(f"  AI ANALYSIS")
     print(f"{'='*60}")
     print(ai_analysis)
-# Adding for sending email report
-send_email_report(full_report, ai_analysis)
-#
+    # Adding for sending email report
+    send_email_report(full_report, ai_analysis)
+
     # Save report
     os.makedirs("portfolio_reports", exist_ok=True)
     timestamp   = datetime.now().strftime("%Y%m%d_%H%M%S")
