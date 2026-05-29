@@ -1,7 +1,7 @@
 import os
-import anthropic
-import yfinance as yf
-from dotenv import load_dotenv
+import anthropic # type: ignore
+import yfinance as yf # type: ignore
+from dotenv import load_dotenv # type: ignore
 from datetime import datetime
 import smtplib
 from email.mime.multipart import MIMEMultipart
