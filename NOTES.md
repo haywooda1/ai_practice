@@ -169,6 +169,64 @@ r'\.''     # literal dot (. alone means "any character")
 r'-{10,}'  # 10 or more dashes
 ```
 
+
+### File I/O — The `open()` Function
+Python's built-in `open()` function reads and writes files.
+
+**Basic syntax:**
+```python
+open(filename, mode)
+```
+
+**Modes:**
+| Mode | Meaning | Behavior |
+|---|---|---|
+| `"r"` | Read | Opens for reading — default if not specified |
+| `"w"` | Write | Creates file if missing, **overwrites** if exists |
+| `"a"` | Append | Creates file if missing, **adds to end** if exists |
+| `"x"` | Create | Creates file — fails if it already exists |
+
+**Always use `with open(...)` — never plain `open()`:**
+```python
+with open("NOTES.md", "a") as f:
+    f.write("something")
+```
+`with` is a context manager — automatically closes and saves the file when
+the block finishes, even if your script crashes mid-write.
+
+**`as f`** names the open file object. `f` is just convention — call it anything.
+
+**Methods on the file object:**
+```python
+f.write("text")    # write a string
+f.read()           # read entire file as one string
+f.readlines()      # read as a list of lines
+f.readline()       # read one line at a time
+```
+
+**Three patterns you'll use constantly:**
+```python
+# Read a file
+with open("NOTES.md", "r") as f:
+    content = f.read()
+
+# Write a new file (or overwrite existing)
+with open("output.txt", "w") as f:
+    f.write("Hello world")
+
+# Append to existing file without touching current content
+with open("NOTES.md", "a") as f:
+    f.write("\n## New Section\n")
+    f.write("Some new content")
+```
+
+**When to use `"w"` vs `"a"`:**
+- `"w"` → fresh file each run (timestamped reports, cover letters)
+- `"a"` → running log that grows over time (NOTES.md updates, cron logs)
+
+You already use this in `portfolio_monitor.py` and `job_alert_agent.py`
+when saving reports — `"w"` creates a fresh timestamped file each run.
+
 ### Data Flow Through Functions (Parameter Relay)
 ```python
 # Data flows like a relay race — each function passes to the next
