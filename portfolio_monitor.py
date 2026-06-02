@@ -21,7 +21,7 @@ load_dotenv()
 POSITIONS = {
     "NTAP": {
         "name": "NetApp",
-        "shares": 1900,
+        "shares": 1928,
         "cost_basis": None,
         "note": "ESPP + RSU mix. Etrade shows $266,912 est. market value across lots."
     },
