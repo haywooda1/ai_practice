@@ -2,6 +2,11 @@ import anthropic
 import os
 from datetime import datetime
 from dotenv import load_dotenv
+from docx import Document
+from docx.shared import Pt, RGBColor, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 load_dotenv()
 client = anthropic.Anthropic()
@@ -167,7 +172,6 @@ def save_cover_letter(cover_letter, job_description, job_title):
     # python-docx sizes use "twips" (1 inch = 914400 EMUs, but for margins
     # we use the Pt() or Inches() helpers). Here we tighten margins slightly
     # so the letter has more breathing room — matching our polished .docx style.
-    from docx.shared import Inches
     for section in doc.sections:
         section.top_margin    = Inches(0.85)
         section.bottom_margin = Inches(0.85)
@@ -218,9 +222,6 @@ def save_cover_letter(cover_letter, job_description, job_title):
     # python-docx doesn't have a built-in "insert horizontal rule" method,
     # so we fake it by applying a bottom border to an empty paragraph.
     # The border XML is injected directly into the paragraph's properties.
-    from docx.oxml.ns import qn
-    from docx.oxml import OxmlElement
- 
     rule_para = doc.add_paragraph()
     rule_para.paragraph_format.space_after = Pt(10)
     pPr = rule_para._p.get_or_add_pPr()     # get the paragraph properties element
