@@ -15,7 +15,8 @@ MY_BACKGROUND = """
 Name: Adam Haywood
 Location: Raleigh-Durham, NC
 Contact: unixnrdu@yahoo.com | (919)880-8528 | linkedin.com/in/haywooda
-Identity: U.S. Navy Veteran | 25+ Years Experience
+#Identity: U.S. Navy Veteran | 25+ Years Experience
+Identity: 25+ Years Experience
 
 EXECUTIVE SUMMARY:
 Senior Engineering Manager with 25+ years of experience leading global R&D,
