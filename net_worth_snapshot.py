@@ -18,8 +18,8 @@ Dependencies:
   pip install yfinance python-dotenv
 
 Environment variables (in .env):
-  EMAIL_ADDRESS    - Gmail address used to send/receive
-  EMAIL_PASSWORD   - Gmail App Password (not your account password)
+  GMAIL_ADDRESS    - Gmail address used to send/receive
+  GMAIL_PASSWORD   - Gmail App Password (not your account password)
   RECIPIENT_EMAIL  - Where to send the report (can be same as EMAIL_ADDRESS)
   FIDELITY_CSV     - Full path to your Fidelity CSV export
                      e.g. /Users/Adam/DEV_Space/ai_practice/fidelity_export.csv
@@ -67,9 +67,9 @@ TAXABLE_POSITIONS = {
 # ─────────────────────────────────────────────
 # EMAIL CONFIG
 # ─────────────────────────────────────────────
-EMAIL_ADDRESS   = os.getenv("EMAIL_ADDRESS")
-EMAIL_PASSWORD  = os.getenv("EMAIL_PASSWORD")
-RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL", EMAIL_ADDRESS)
+#EMAIL_ADDRESS   = os.getenv("GMAIL_ADDRESS")
+#EMAIL_PASSWORD  = os.getenv("GMAIL_PASSWORD")
+#RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL", EMAIL_ADDRESS)
 FIDELITY_CSV    = os.getenv("FIDELITY_CSV", "")
 
 
@@ -386,17 +386,23 @@ def build_html(taxable_rows, fidelity_accounts, report_date):
 # ─────────────────────────────────────────────
 
 def send_email(subject, html_body):
+    gmail_address  = os.getenv("GMAIL_ADDRESS")
+    gmail_password = os.getenv("GMAIL_APP_PASSWORD")
+    if not gmail_address or not gmail_password:
+        print("⚠️  Gmail credentials not found in .env - skipping email")
+        return
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"]    = EMAIL_ADDRESS
-    msg["To"]      = RECIPIENT_EMAIL
+    msg["From"]    = gmail_address
+    msg["To"]      = gmail_address
     msg.attach(MIMEText(html_body, "html"))
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_ADDRESS, RECIPIENT_EMAIL, msg.as_string())
-    print(f"✅ Report sent to {RECIPIENT_EMAIL}")
-
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(gmail_address, gmail_password)
+            server.sendmail(gmail_address, gmail_address, msg.as_string())
+        print(f"✅ Report sent to {gmail_address}")
+    except Exception as e:
+        print(f"⚠️  Email failed: {e}")
 
 # ─────────────────────────────────────────────
 # MAIN
