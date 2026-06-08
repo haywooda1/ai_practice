@@ -18,46 +18,49 @@ client = anthropic.Anthropic()
 MY_BACKGROUND = """
 Name: Adam Haywood
 Location: Raleigh-Durham, NC (open to remote, hybrid, or on-site in RDU area)
-Target Roles: Senior Engineering Manager, Director of Engineering, Quality Engineering Manager, Quality Assurance Manager 
+
+TARGET ROLES (in priority order):
+1. Director / VP of Engineering — Platform Delivery, Reliability, or Engineering Operations
+2. Senior Engineering Manager — Platform, DevOps, SRE, Quality Engineering, or Enablement
+3. Director of Quality Engineering / Engineering Enablement
+4. Head of Engineering Operations or Technical Program Delivery
 
 SUMMARY:
-Engineering leader with 25+ years of experience owning end-to-end software delivery, platform strategy, and
-engineering team development across complex, enterprise-scale environments. Proven track record defining
-technical roadmaps aligned to business outcomes - including enabling $94.5M in quarterly revenue through
-disciplined delivery execution and accelerated partner readiness. Experienced building and scaling high-performing
-engineering organizations, operationalizing AI-driven automation, and establishing SDLC governance, quality
-standards, and CI/CD practices that improve release velocity and platform stability. Brings deep credibility in
-distributed systems, cross-functional alignment, and change leadership - with a hands-on approach to both people
-and craft.
+Engineering leader with 25+ years of experience owning platform delivery, engineering
+operations, and quality systems at enterprise scale. Known for building and scaling
+high-performing distributed teams, operationalizing SDLC governance and CI/CD practices,
+and driving measurable improvement in release velocity and platform stability. Enabled
+$94.5M in quarterly revenue through disciplined delivery execution and partner readiness.
+Deep experience leading cross-functional alignment across Product, Architecture, and
+Program teams — with a hands-on approach to both people leadership and technical craft.
 
 KEY STRENGTHS:
-- Engineering Strategy & Technical Roadmap Ownership
-- Software Delivery Lifecycle (SDLC) Governance
-- CI/CD Adoption & Engineering Excellence
-- RESTful APIs, Distributed Systems & Platform Architecture
-- Production Incident Management & Operational Stability
+- Platform Delivery & Engineering Operations Leadership
+- SDLC Governance, CI/CD Adoption & Engineering Excellence
+- Site Reliability, Production Stability & Incident Management
+- Quality Engineering, Test Strategy & Release Governance
+- Engineering Enablement — Partner, Customer & Internal Teams
+- Technical Roadmap Ownership aligned to Business Outcomes
 - Engineering Talent Strategy, Coaching & Career Development
-- Capex/Opex Planning & Vendor Governance
+- Capex/Opex Planning, SOW Negotiation & Vendor Governance
 - AI/ML-Enabled Automation & Modern Engineering Practices
-- Cross-Functional Leadership: Product, Program, Architectire
-- Stakeholder Communication & Delivery Transparency
+- Cross-Functional Leadership: Product, Program, Architecture, Sales
 
-# Global team leadership (10 FTEs + 18 contingent resources)
-# AI/ML automation and multi-agent systems
-# Enterprise storage/infrastructure (NetApp ONTAP, SAN/NAS)
-# Quality Engineering and Interoperability at scale
-# Budget ownership, SOW negotiation, vendor management
-# Cross-functional collaboration with Product, R&D, Sales
+TEAM SCALE: 10 FTEs + 18 contingent engineers, globally distributed
+DOMAIN DEPTH: Enterprise storage/infrastructure (NetApp ONTAP, SAN/NAS),
+              Distributed systems, Interoperability ecosystems
 
 AI LEADERSHIP & HANDS-ON PRACTICE:
-I work directly with AI tools daily — including Claude API and LLM-driven
-workflows — and have led teams building multi-agent automation systems.
-I understand the technology well enough to direct it strategically and
-translate it for both engineers and executives.
+Actively building AI-powered tools daily using the Claude API and LLM-driven workflows.
+Led teams adopting multi-agent automation. Able to direct AI strategy and translate it
+for both engineers and executives.
 
-SENIORITY: Senior Manager → Director level preferred
-INDUSTRY FIT: Enterprise tech, cloud infrastructure, infrastructure, storage, networking
-NOT A FIT: Pure IC engineering roles, sales, finance, non-tech management, Pure Software Development
+SENIORITY: Senior Manager or Director level — VP considered for right scope
+INDUSTRY FIT: Enterprise tech, cloud infrastructure, platform/SRE, AI/ML, storage,
+              networking, DevOps tooling, developer platforms
+NOT A FIT: Individual contributor (IC) engineering roles, pure software development,
+           SWE / Staff Engineer roles requiring hands-on coding, sales, finance,
+           non-technical management
 """
 
 # Minimum match score to include in digest (0-100)
@@ -96,7 +99,6 @@ ALL_SENDERS = (
 def parse_linkedin_email(body, email_id):
     """Extract job listings from a LinkedIn alert email body."""
     jobs = []
-    # LinkedIn separates listings with lines of dashes
     sections = re.split(r'-{10,}', body)
 
     for section in sections:
@@ -107,7 +109,6 @@ def parse_linkedin_email(body, email_id):
         title, company, location, link = None, None, None, None
 
         for line in lines:
-            # Skip footer / utility lines
             if any(x in line.lower() for x in
                    ['manage your', 'connections', 'view job',
                     'unsubscribe', 'linkedin.com/comm', 'midtoken']):
@@ -126,7 +127,6 @@ def parse_linkedin_email(body, email_id):
             ):
                 location = line
 
-        # LinkedIn wraps job URLs with a tracking redirect — extract the job ID
         url_match = re.search(
             r'https://www\.linkedin\.com/comm/jobs/view/(\d+)', section)
         if url_match:
@@ -148,12 +148,6 @@ def parse_linkedin_email(body, email_id):
 def parse_indeed_email(body, email_id):
     """Extract job listings from an Indeed alert email body."""
     jobs = []
-
-    # Indeed uses a different structure — each job block contains a job title
-    # as a link, followed by company and location on separate lines.
-    # We look for job title + company/location before the next URL block.
-
-    # Strategy: split on blank lines, then look for blocks with a job URL
     sections = re.split(r'\n{2,}', body)
 
     for section in sections:
@@ -163,22 +157,19 @@ def parse_indeed_email(body, email_id):
 
         title, company, location, link = None, None, None, None
 
-        # Look for an Indeed job URL anywhere in the section
         url_match = re.search(
             r'https://(?:www\.)?indeed\.com/(?:rc/clk|viewjob|pagead/clk)[^\s"\'<>]+',
             section
         )
-        # Also catch short redirect links like r.indeed.com
         if not url_match:
             url_match = re.search(r'https://r\.indeed\.com/[^\s"\'<>]+', section)
 
         if not url_match:
-            continue  # no job URL = not a job block
+            continue
 
         link = url_match.group(0).rstrip('.')
 
         for line in lines:
-            # Skip Indeed utility lines
             if any(x in line.lower() for x in
                    ['unsubscribe', 'manage alerts', 'view all jobs',
                     'indeed.com', 'privacy', 'http']):
@@ -223,7 +214,7 @@ def parse_email_body(body, email_id, source):
 
 
 # ─────────────────────────────────────────────
-# Claude scoring — unchanged
+# Claude scoring
 # ─────────────────────────────────────────────
 
 def score_job(job):
@@ -231,25 +222,62 @@ def score_job(job):
     response = client.messages.create(
         model="claude-sonnet-4-5",
         max_tokens=600,
-        system="""You are a career matching specialist. Score a job listing against
-a candidate's background and return ONLY a JSON object with no other text.
+        system="""You are a precise career matching specialist. Score a job listing
+against a candidate's background and return ONLY a JSON object with no other text.
 
-Scoring criteria (each 0-25 points):
-1. title_fit: How well does the job title match target seniority and role type?
-2. skill_match: How well do required skills match the candidate's experience?
-3. seniority_level: Is this the right level (Sr Manager/Director/VP)?
-4. industry_fit: Is this the right industry/domain?
+SCORING CRITERIA (each 0-25 points):
+
+1. title_fit — Does the job title match the candidate's target roles?
+   STRONG (20-25): Director/VP/Head of Engineering, Platform, SRE, DevOps,
+                   Quality Engineering, Engineering Operations, Engineering Enablement,
+                   Senior Engineering Manager in those domains
+   MODERATE (10-19): Engineering Manager (without platform/ops/quality context),
+                     Technical Program Manager, Engineering Lead
+   WEAK (0-9): Software Engineer, Staff Engineer, Principal Engineer, SWE,
+               any IC title, QA Analyst, Developer, Programmer, Architect (IC)
+
+2. skill_match — Do the role's required skills align with the candidate's strengths?
+   STRONG (20-25): Team leadership, SDLC governance, CI/CD, platform delivery,
+                   reliability/SRE, quality engineering, vendor management,
+                   operational stability, AI/ML tooling adoption
+   MODERATE (10-19): Some leadership with heavy IC technical requirements,
+                     adjacent domains with transferable skills
+   WEAK (0-9): Requires hands-on coding as primary responsibility, deep SWE skills
+               (TypeScript, React, Java, Python development), architecture as IC
+
+3. seniority_level — Is this the right organizational level?
+   STRONG (20-25): Director, VP, Head, Senior Manager with team ownership
+   MODERATE (10-19): Manager (smaller scope), Senior IC with influence
+   WEAK (0-9): IC roles regardless of title prestige, junior/mid management
+
+4. industry_fit — Is this the right domain and company type?
+   STRONG (20-25): Enterprise tech, cloud infrastructure, storage/networking,
+                   platform/SRE organizations, DevOps tooling, AI/ML systems,
+                   developer platforms, quality engineering orgs
+   MODERATE (10-19): Adjacent SaaS, fintech with infra/platform teams,
+                     large-scale consumer tech with platform needs
+   WEAK (0-9): Pure SaaS product companies where infra depth doesn't apply,
+               security/compliance SaaS, consumer apps, unrelated verticals
+
+AUTOMATIC SCORE CAPS — apply these before returning:
+- If the role is an IC engineering position (SWE, Staff Eng, Principal, Architect):
+  cap title_fit at 10 and skill_match at 12 regardless of other factors.
+- If the role requires hands-on coding as primary output:
+  cap skill_match at 12.
+- If seniority is below Senior Manager equivalent:
+  cap seniority_level at 10.
 
 Also include:
 - total: sum of all four scores (0-100)
-- why_good: 1-2 sentences on strongest match points (be specific)
-- concerns: 1 sentence on any gaps or concerns (or "None" if strong match)
-- recommendation: one of "Strong Match", "Good Match", "Weak Match", "Skip"
+- why_good: 1-2 sentences on the strongest alignment (be specific, not generic)
+- concerns: 1 sentence on the most important gap (or "None" if genuinely strong)
+- recommendation: "Strong Match" (80+), "Good Match" (60-79),
+                  "Weak Match" (40-59), or "Skip" (below 40)
 
 Return ONLY valid JSON. Example:
-{"title_fit":22,"skill_match":20,"seniority_level":25,"industry_fit":18,
- "total":85,"why_good":"Director-level role at enterprise tech company aligns with NetApp background.",
- "concerns":"Role focuses more on hardware than AI/ML.",
+{"title_fit":22,"skill_match":21,"seniority_level":24,"industry_fit":20,
+ "total":87,"why_good":"Director of Platform Engineering title and SRE/reliability scope align directly with candidate's target positioning and operational leadership depth.",
+ "concerns":"None",
  "recommendation":"Strong Match"}""",
         messages=[{
             "role": "user",
@@ -353,9 +381,8 @@ def build_job_card(job, scoring, rank):
             f'&#9888;&#xfe0e; {concerns}</span></div>'
         )
 
-    # Button label and URL vary by source
-    source      = job.get("source", "LinkedIn")
-    btn_label   = f"View on {source} &#8594;"
+    source    = job.get("source", "LinkedIn")
+    btn_label = f"View on {source} &#8594;"
 
     return f"""
     <div style="background:{card_bg};border:{card_border};border-left:{left_border};
@@ -429,23 +456,17 @@ def build_job_card(job, scoring, rank):
 
 
 def build_html_digest(scored_jobs, all_count, source_counts):
-    """Build the full HTML email digest.
-
-    source_counts is a dict like {"LinkedIn": 8, "Indeed": 6}
-    used to show the per-source breakdown in the header.
-    """
+    """Build the full HTML email digest."""
     date_str = datetime.now().strftime("%A, %B %d, %Y")
     shown    = len(scored_jobs)
     skipped  = all_count - shown
     strong   = sum(1 for _, s in scored_jobs if s.get("total", 0) >= 80)
     good     = sum(1 for _, s in scored_jobs if 60 <= s.get("total", 0) < 80)
 
-    # Source breakdown line for the header
     source_line = " &nbsp;&middot;&nbsp; ".join(
         f"{v} {k}" for k, v in sorted(source_counts.items()) if v > 0
     )
 
-    # Split cards into strong / good sections
     strong_cards = ""
     good_cards   = ""
     for i, (job, scoring) in enumerate(scored_jobs, 1):
@@ -506,7 +527,7 @@ def build_html_digest(scored_jobs, all_count, source_counts):
             {date_str}
         </div>
         <div style="font-size:13px;color:#94a3b8;margin-top:4px;">
-            Adam Haywood &nbsp;&middot;&nbsp; Senior EM / Director / VP Engineering
+            Adam Haywood &nbsp;&middot;&nbsp; Platform Delivery / Engineering Operations / Quality Engineering
         </div>
         <div style="font-size:12px;color:#64748b;margin-top:6px;">
             Sources: {source_line}
@@ -543,7 +564,7 @@ def build_html_digest(scored_jobs, all_count, source_counts):
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6;
                     font-size:12px;color:#9ca3af;">
             Threshold: {SCORE_THRESHOLD}+ / 100 &nbsp;&middot;&nbsp;
-            Scored against Senior EM / Director profile &nbsp;&middot;&nbsp;
+            Scored against Platform Delivery / Director profile &nbsp;&middot;&nbsp;
             Ranked highest to lowest
         </div>
     </div>
@@ -568,7 +589,7 @@ def build_html_digest(scored_jobs, all_count, source_counts):
 
 
 # ─────────────────────────────────────────────
-# Email sender — unchanged
+# Email sender
 # ─────────────────────────────────────────────
 
 def send_digest(html_content, job_count):
@@ -629,11 +650,10 @@ def main():
         print("  Enable IMAP in Gmail Settings → See all settings → Forwarding and POP/IMAP")
         return
 
-    all_jobs     = []
-    since_str    = (datetime.now() - timedelta(days=7)).strftime("%d-%b-%Y")
+    all_jobs      = []
+    since_str     = (datetime.now() - timedelta(days=7)).strftime("%d-%b-%Y")
     source_counts = {"LinkedIn": 0, "Indeed": 0}
 
-    # ── Fetch emails from all senders
     for sender, source in ALL_SENDERS:
         _, msg_nums = mail.search(None, f'(FROM "{sender}" SINCE "{since_str}")')
         ids = msg_nums[0].split()
@@ -662,8 +682,7 @@ def main():
         print("\n  No job alert emails found in the last 7 days.")
         return
 
-    # ── Deduplicate by link
-    seen_links = set()
+    seen_links  = set()
     unique_jobs = []
     for job in all_jobs:
         if job["link"] not in seen_links:
@@ -675,7 +694,6 @@ def main():
           f"(LinkedIn: {source_counts['LinkedIn']}, Indeed: {source_counts['Indeed']}) "
           f"— scoring each...\n")
 
-    # ── Score each job with Claude
     scored = []
     for i, job in enumerate(unique_jobs, 1):
         print(f"  [{i}/{len(unique_jobs)}] [{job['source']}] "
@@ -693,11 +711,9 @@ def main():
     print(f"\n✅ {len(scored)} jobs above threshold ({SCORE_THRESHOLD}+) "
           f"out of {len(unique_jobs)} total\n")
 
-    # ── Build and send digest (always sends, even on zero-match days)
     html = build_html_digest(scored, len(unique_jobs), source_counts)
     send_digest(html, len(scored))
 
-    # ── Save locally
     os.makedirs("job_digests", exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filepath  = f"job_digests/digest_{timestamp}.html"
@@ -705,7 +721,6 @@ def main():
         f.write(html)
     print(f"💾 Digest saved to {filepath}")
 
-    # ── Terminal summary
     print(f"\n{'='*60}")
     print(f"  TOP MATCHES")
     print(f"{'='*60}")
