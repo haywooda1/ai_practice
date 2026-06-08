@@ -18,22 +18,36 @@ client = anthropic.Anthropic()
 MY_BACKGROUND = """
 Name: Adam Haywood
 Location: Raleigh-Durham, NC (open to remote, hybrid, or on-site in RDU area)
-Target Roles: Senior Engineering Manager, Director of Engineering, VP Engineering,
-              Director of AI/ML, Head of Engineering, AI Product Director
+Target Roles: Senior Engineering Manager, Director of Engineering, Quality Engineering Manager, Quality Assurance Manager 
 
 SUMMARY:
-Senior Engineering Manager with 25+ years leading global R&D, Quality Engineering,
-and Interoperability organizations. Track record supporting $94.5M in quarterly
-revenue through accelerated partner/customer readiness. Experienced in scaling
-high-impact teams, Capex/Opex planning, AI/ML automation initiatives.
+Engineering leader with 25+ years of experience owning end-to-end software delivery, platform strategy, and
+engineering team development across complex, enterprise-scale environments. Proven track record defining
+technical roadmaps aligned to business outcomes - including enabling $94.5M in quarterly revenue through
+disciplined delivery execution and accelerated partner readiness. Experienced building and scaling high-performing
+engineering organizations, operationalizing AI-driven automation, and establishing SDLC governance, quality
+standards, and CI/CD practices that improve release velocity and platform stability. Brings deep credibility in
+distributed systems, cross-functional alignment, and change leadership - with a hands-on approach to both people
+and craft.
 
 KEY STRENGTHS:
-- Global team leadership (10 FTEs + 18 contingent resources)
-- AI/ML automation and multi-agent systems
-- Enterprise storage/infrastructure (NetApp ONTAP, SAN/NAS)
-- Quality Engineering and Interoperability at scale
-- Budget ownership, SOW negotiation, vendor management
-- Cross-functional collaboration with Product, R&D, Sales
+- Engineering Strategy & Technical Roadmap Ownership
+- Software Delivery Lifecycle (SDLC) Governance
+- CI/CD Adoption & Engineering Excellence
+- RESTful APIs, Distributed Systems & Platform Architecture
+- Production Incident Management & Operational Stability
+- Engineering Talent Strategy, Coaching & Career Development
+- Capex/Opex Planning & Vendor Governance
+- AI/ML-Enabled Automation & Modern Engineering Practices
+- Cross-Functional Leadership: Product, Program, Architectire
+- Stakeholder Communication & Delivery Transparency
+
+# Global team leadership (10 FTEs + 18 contingent resources)
+# AI/ML automation and multi-agent systems
+# Enterprise storage/infrastructure (NetApp ONTAP, SAN/NAS)
+# Quality Engineering and Interoperability at scale
+# Budget ownership, SOW negotiation, vendor management
+# Cross-functional collaboration with Product, R&D, Sales
 
 AI LEADERSHIP & HANDS-ON PRACTICE:
 I work directly with AI tools daily — including Claude API and LLM-driven
@@ -42,8 +56,8 @@ I understand the technology well enough to direct it strategically and
 translate it for both engineers and executives.
 
 SENIORITY: Senior Manager → Director level preferred
-INDUSTRY FIT: Enterprise tech, cloud infrastructure, AI/ML, storage, networking
-NOT A FIT: Pure IC engineering roles, sales, finance, non-tech management
+INDUSTRY FIT: Enterprise tech, cloud infrastructure, infrastructure, storage, networking
+NOT A FIT: Pure IC engineering roles, sales, finance, non-tech management, Pure Software Development
 """
 
 # Minimum match score to include in digest (0-100)
