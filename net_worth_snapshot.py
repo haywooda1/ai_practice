@@ -104,19 +104,25 @@ def parse_fidelity_csv(csv_path):
     with open(csv_path, "r", encoding="utf-8-sig") as f:
         content = f.read()
 
-    # Strip disclaimer footer: everything after the first blank/comma-only row
+    # Strip disclaimer footer: everything after the actual disclaimer text begins.
+    # Blank lines between account sections are skipped (not used as a stop signal)
+    # so all accounts (e.g. Traditional IRA AND 401k) get included.
     data_lines = []
     for line in content.strip().split("\n"):
         stripped = line.strip().replace(",", "")
-        if stripped == "" or "provided to you solely" in line or \
+        if "provided to you solely" in line or \
            "Brokerage services" in line or "Date downloaded" in line:
             break
+        if stripped == "":
+            continue  # skip blank separator lines between accounts
         data_lines.append(line)
 
     if not data_lines:
         return {}
 
-    df = pd.read_csv(io.StringIO("\n".join(data_lines)))
+    # index_col=False prevents pandas from absorbing the first column (Account Number)
+    # as the DataFrame index, which would shift all other columns left by one
+    df = pd.read_csv(io.StringIO("\n".join(data_lines)), index_col=False)
 
     # Normalize column names (strip whitespace)
     df.columns = [c.strip() for c in df.columns]
@@ -131,7 +137,7 @@ def parse_fidelity_csv(csv_path):
         for _, row in group.iterrows():
             symbol      = str(row.get("Symbol", "")).strip()
             description = str(row.get("Description", "")).strip()
-            qty         = row.get("Quantity", None)
+            qty         = pd.to_numeric(row.get("Quantity", None), errors="coerce")
             price       = clean_currency(row.get("Last Price", 0))
             value       = clean_currency(row.get("Current Value", 0))
             day_gain    = clean_currency(row.get("Today's Gain/Loss Dollar", 0))

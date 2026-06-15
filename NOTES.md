@@ -165,10 +165,9 @@ if url_match:
 # Common patterns
 r'\d+'     # one or more digits
 r'\w+'     # one or more word characters
-r'\.''     # literal dot (. alone means "any character")
+r'\.'      # literal dot (. alone means "any character")
 r'-{10,}'  # 10 or more dashes
 ```
-
 
 ### File I/O — The `open()` Function
 Python's built-in `open()` function reads and writes files.
@@ -226,7 +225,6 @@ with open("NOTES.md", "a") as f:
 
 You already use this in `portfolio_monitor.py` and `job_alert_agent.py`
 when saving reports — `"w"` creates a fresh timestamped file each run.
-
 
 ### Pandas — Working with Tabular Data
 Pandas is the standard library for reading and manipulating spreadsheet-style
@@ -295,6 +293,26 @@ df.fillna(0)                              # replace NaN with 0
 text strings — especially if they contain `$`, `,`, or `%`. Always check
 `df.dtypes` when debugging formatting errors — if a numeric column shows
 `object` instead of `int64`/`float64`, that's your clue to add `pd.to_numeric()`.
+
+**`index_col=False` — preventing column misalignment:**
+```python
+df = pd.read_csv(io.StringIO(csv_text), index_col=False)
+```
+If a CSV's data rows have a value in every column but pandas decides to use
+the first column as the row index anyway, every other column's data shifts
+left by one position relative to its header. Symptoms: `groupby("Account Name")`
+returns symbol/ticker values instead of account names, dollar columns show
+`$0.00` or `NaN` everywhere, and the leftmost "index" in printed output looks
+like real data (e.g. account numbers).
+
+**How to diagnose:** print a few columns side by side and compare to the raw
+CSV:
+```python
+print(df[["Account Name", "Symbol", "Current Value"]].to_string())
+```
+If the values look shifted by one column versus what you see in the raw CSV,
+add `index_col=False` to `read_csv()`. This tells pandas "never use any column
+as the row index — keep all columns as columns."
 
 ### Data Flow Through Functions (Parameter Relay)
 ```python
@@ -442,6 +460,14 @@ python3 job_assistant.py
 
 **Output:** Saves to `cover_letters/YYYYMMDD_HHMMSS_job-title.txt`
 
+**Positioning notes:**
+- AI framing: "I work directly with AI tools daily — including Claude API and
+  LLM-driven workflows — and have led teams building multi-agent automation
+  systems. I understand the technology well enough to direct it strategically
+  and translate it for both engineers and executives."
+- Navy veteran background removed from cover letter content — saved for
+  interview/culture conversations instead
+
 ---
 
 ### Agent 3 — Portfolio Monitor (`portfolio_monitor.py`)
@@ -513,6 +539,28 @@ python3 job_alert_agent.py
 **Key concepts:** IMAP email reading, regex parsing, heuristic text extraction,
 JSON scoring via Claude, HTML digest, deduplication
 
+**Positioning notes:** same AI framing and Navy-removal as Agent 2 — `MY_BACKGROUND`
+should stay consistent across both agents since it drives scoring and cover letters.
+
+---
+
+### Agent 5 — Net Worth Snapshot (`net_worth_snapshot.py`)
+Combines live taxable brokerage positions (via yfinance) with Fidelity IRA/401(k)
+positions (via CSV export) into one daily HTML net worth report.
+
+**Run:**
+```bash
+python3 net_worth_snapshot.py
+```
+
+**Setup:**
+- Set `FIDELITY_CSV` in `.env` to the full path of your Fidelity CSV export
+- Download from Fidelity: Accounts → Portfolio → Positions → Download
+- Re-download periodically (weekly/monthly) — same path, no script changes needed
+
+**Key concepts:** combining multiple data sources into one report, pandas CSV
+parsing, `index_col=False`, disclaimer-footer stripping, account grouping
+
 ---
 
 ## 7. Key Commands
@@ -577,8 +625,10 @@ pip3 show anthropic        # show package details
 | `DeprecationWarning` on model | Old model name | Use `claude-sonnet-4-5` |
 | `403 Forbidden` on FMP | Free tier limit | Switch to `yfinance` (free, no key needed) |
 | Push rejected — secrets | API key in a commit | Remove from commit history, rotate the key |
+| `pd.read_csv` columns shifted left by one | First CSV column absorbed as DataFrame index instead of staying a column | Add `index_col=False` to `pd.read_csv()` |
+| `groupby()` returns wrong values (e.g. symbols instead of account names) | Often a symptom of the column-shift issue above — check with `df[["col1","col2"]].to_string()` | Fix the underlying `read_csv` call, not the groupby |
 
 ---
 
-*Last updated: May 2026*
+*Last updated: June 2026*
 *Repo: github.com/haywooda1/ai_practice*
