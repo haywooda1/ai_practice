@@ -227,6 +227,75 @@ with open("NOTES.md", "a") as f:
 You already use this in `portfolio_monitor.py` and `job_alert_agent.py`
 when saving reports — `"w"` creates a fresh timestamped file each run.
 
+
+### Pandas — Working with Tabular Data
+Pandas is the standard library for reading and manipulating spreadsheet-style
+data (CSVs, Excel exports) in Python. Used in `net_worth_snapshot.py` to read
+Fidelity CSV exports.
+
+**Import convention:**
+```python
+import pandas as pd
+```
+
+**Two core data structures:**
+- **Series** — a single column of data (like one Excel column)
+- **DataFrame** — a full table with rows and columns (like an Excel sheet)
+
+**Loading data:**
+```python
+df = pd.read_csv("Etrade_Positions.csv")  # CSV → DataFrame
+df.head()        # preview first 5 rows
+df.columns       # list all column names
+df.dtypes        # show data type of every column — int64, float64, object (string)
+```
+
+**`groupby()` — split into sub-tables by column value:**
+```python
+for account_name, group in df.groupby("Account Name"):
+    # account_name = "Traditional IRA" (first loop), "401(K) PLAN" (second loop)
+    # group = DataFrame containing only rows for that account
+```
+This is pandas' equivalent of "for each unique value in this column,
+give me just the rows that match."
+
+**`iterrows()` — loop through rows one at a time:**
+```python
+for _, row in group.iterrows():
+    qty = row.get("Quantity", None)
+```
+- Returns `(index, row)` pairs — `_` discards the index since it's unused
+- `row.get("ColumnName", default)` works like a dictionary lookup
+
+**`pd.to_numeric()` — convert strings to numbers safely:**
+```python
+qty = pd.to_numeric(row.get("Quantity", None), errors="coerce")
+```
+- `"150"` → `150.0`
+- `"1,234.5"` → `1234.5` (commas handled automatically)
+- `errors="coerce"` → unconvertible values become `NaN` instead of crashing
+
+**`pd.notna()` — check for missing/NaN values:**
+```python
+qty_str = f"{qty:,.3f}" if pd.notna(qty) else "–"
+```
+`NaN` (Not a Number) is pandas' marker for missing data. `pd.notna()` returns
+`False` for `NaN`, letting you handle missing values gracefully.
+
+**Other common operations:**
+```python
+df["Symbol"]                              # get one column as a Series
+df[df["Quantity"] > 0]                    # filter rows by condition
+df.sort_values("Value", ascending=False)  # sort by column
+df["Value"].sum()                         # sum a column
+df.fillna(0)                              # replace NaN with 0
+```
+
+**Why this matters:** CSV exports (Fidelity, Etrade) often store numbers as
+text strings — especially if they contain `$`, `,`, or `%`. Always check
+`df.dtypes` when debugging formatting errors — if a numeric column shows
+`object` instead of `int64`/`float64`, that's your clue to add `pd.to_numeric()`.
+
 ### Data Flow Through Functions (Parameter Relay)
 ```python
 # Data flows like a relay race — each function passes to the next
@@ -244,120 +313,6 @@ from datetime import datetime, timedelta
 since = datetime.now() - timedelta(days=7)
 since_str = since.strftime("%d-%b-%Y")  # "22-May-2026" — IMAP format
 ```
-
-### Multiple Return Values & Unpacking
-```python
-# A function can return multiple values at once (separated by commas)
-def score_config(total):
-    if total >= 80:
-        return "#15803d", "Strong Match", "#f0fdf4", "#bbf7d0", "#166534"
-    elif total >= 60:
-        return "#b45309", "Good Match", "#fffbeb", "#fde68a", "#92400e"
-
-# Caller unpacks them into named variables
-text_color, label, card_bg, badge_bg, badge_text = score_config(85)
-
-# Use _ to discard values you don't need
-text_color, _, card_bg, _, _ = score_config(85)
-```
-This pattern is common when a function produces a bundle of related values.
-One call gives you everything; change the logic once and all callers update.
-
-### Ternary / Inline If-Else
-```python
-# Full if/else (two lines)
-if is_strong:
-    left_border = "4px solid green"
-else:
-    left_border = "1px solid gray"
-
-# Ternary — same thing, one line
-left_border = "4px solid green" if is_strong else "1px solid gray"
-```
-Use ternary when you're just assigning a variable — not for complex logic.
-
-### Empty String as a Conditional Toggle
-```python
-# Start with nothing
-strong_banner = ""
-
-# Conditionally overwrite with content
-if is_strong:
-    strong_banner = "<div>★ Strong Match</div>"
-
-# Drop into f-string — empty string contributes nothing, content shows up
-return f"...{strong_banner}..."
-```
-Standard pattern for optional HTML chunks. Avoids nested f-strings or
-conditional expressions inside the template.
-
-### Default Parameters
-```python
-# max_val=25 is the default — used if caller doesn't specify it
-def score_bar_html(value, max_val=25):
-    pct = int((value / max_val) * 100)
-
-score_bar_html(20)      # max_val = 25  →  pct = 80%
-score_bar_html(20, 100) # max_val = 100 →  pct = 20%
-```
-Makes functions flexible without requiring the caller to always pass everything.
-
-### enumerate() — Index + Value in One Loop
-```python
-# Without enumerate — manual counter
-i = 1
-for job, scoring in scored_jobs:
-    card = build_job_card(job, scoring, i)
-    i += 1
-
-# With enumerate — cleaner, starting at 1
-for i, (job, scoring) in enumerate(scored_jobs, 1):
-    card = build_job_card(job, scoring, i)
-```
-The `(job, scoring)` on the left is tuple unpacking — each item in the list
-is a pair, and Python splits it into two variables automatically.
-
-### Dispatcher / Router Pattern
-```python
-# Instead of one function that handles everything with if/elif chains,
-# use a router that delegates to the right specialist function:
-
-def parse_email_body(body, email_id, source):
-    if source == "LinkedIn":
-        return parse_linkedin_email(body, email_id)
-    elif source == "Indeed":
-        return parse_indeed_email(body, email_id)
-    return []
-```
-Clean to extend — adding Glassdoor means adding one `elif` and one new function.
-Each parser focuses on one format; none of them know about the others.
-
-### List of Tuples — Paired Data
-```python
-# Each item is a (address, label) pair
-ALL_SENDERS = (
-    [(s, "LinkedIn") for s in LINKEDIN_SENDERS] +
-    [(s, "Indeed")   for s in INDEED_SENDERS]
-)
-
-# Unpack the pair in the loop
-for sender, source in ALL_SENDERS:
-    print(f"Checking {sender} ({source})")
-```
-Useful when two values always belong together — avoids parallel lists
-that can drift out of sync.
-
-### String Concatenation in a Loop
-```python
-strong_cards = ""   # start with empty string
-
-for i, (job, scoring) in enumerate(scored_jobs, 1):
-    card = build_job_card(job, scoring, i)
-    if scoring.get("total", 0) >= 80:
-        strong_cards += card   # append each card's HTML to the growing string
-```
-By the end of the loop `strong_cards` is one long HTML string containing
-all the strong-match cards. Same pattern used for `good_cards`.
 
 ---
 
@@ -528,10 +483,9 @@ python3 portfolio_monitor.py
 
 ---
 
-### Agent 4 — Job Alert Agent (`job_alert_agent.py`)
-Reads LinkedIn and Indeed job alert emails from Gmail, scores each job against
-your resume using Claude (0-100), filters to top matches, sends a ranked HTML
-digest daily at 9am weekdays.
+### Agent 4 — LinkedIn Job Alert Agent (`job_alert_agent.py`)
+Reads LinkedIn job alert emails from Gmail, scores each job against your resume
+using Claude (0-100), filters to top matches, sends ranked HTML digest daily.
 
 **Run:**
 ```bash
@@ -551,48 +505,13 @@ python3 job_alert_agent.py
 
 **Threshold:** Jobs scoring 60+ are included. Change `SCORE_THRESHOLD` in script.
 
-**Sources supported:**
-| Source | Senders watched |
-|---|---|
-| LinkedIn | jobalerts-noreply@linkedin.com, jobs-noreply@linkedin.com, messages-noreply@linkedin.com |
-| Indeed | donotreply@match.indeed.com, alert@indeed.com |
-
-To add a new source: add a `NEW_SENDERS` list, add it to `ALL_SENDERS`, and write a
-`parse_new_email()` function. Then add one `elif` in `parse_email_body()`.
-
 **Gmail setup needed:**
-- Forward LinkedIn/Indeed alerts to Gmail
+- Yahoo Mail → forward LinkedIn alerts to Gmail
 - Gmail → enable IMAP (Settings → Forwarding and POP/IMAP)
 - Gmail App Password → myaccount.google.com → Security → App Passwords
 
-**HTML digest features:**
-- Dark navy header with name and target role
-- Summary stats bar: Scanned / Shown / Strong / Good / Filtered
-- Jobs split into "★ Strong Matches" (80+) and "Good Matches" (60–79) sections
-- Strong matches: green card background, thick left border, "★ Strong Match" banner
-- Score breakdown: mini bar charts per sub-score (green/amber/red)
-- Source badge on each card (LinkedIn blue / Indeed blue)
-- Concerns shown in amber callout box
-- "No matches today" empty state — digest always sends so you know the cron ran
-- Local copy saved to `job_digests/digest_YYYYMMDD_HHMMSS.html`
-
-**Key functions:**
-| Function | What it does |
-|---|---|
-| `parse_linkedin_email(body, id)` | Extracts jobs from LinkedIn email format (dash-separated sections) |
-| `parse_indeed_email(body, id)` | Extracts jobs from Indeed email format (blank-line sections, different URL patterns) |
-| `parse_email_body(body, id, source)` | Router — dispatches to the right parser based on source label |
-| `score_job(job)` | Sends job to Claude, returns JSON scoring dict |
-| `score_config(total)` | Returns color/label/bg values based on score threshold |
-| `score_bar_html(value)` | Renders a mini horizontal bar for a sub-score |
-| `source_badge_html(source)` | Renders LinkedIn/Indeed pill badge |
-| `build_job_card(job, scoring, rank)` | Builds one HTML job card |
-| `build_html_digest(scored_jobs, all_count, source_counts)` | Assembles full HTML email |
-| `send_digest(html, count)` | Sends via SMTP SSL to Gmail |
-
-**Key concepts:** IMAP email reading, multipart email parsing, regex URL extraction,
-dispatcher/router pattern, heuristic text extraction, JSON scoring via Claude,
-conditional HTML via empty-string toggle, HTML digest with source badges
+**Key concepts:** IMAP email reading, regex parsing, heuristic text extraction,
+JSON scoring via Claude, HTML digest, deduplication
 
 ---
 
@@ -658,91 +577,8 @@ pip3 show anthropic        # show package details
 | `DeprecationWarning` on model | Old model name | Use `claude-sonnet-4-5` |
 | `403 Forbidden` on FMP | Free tier limit | Switch to `yfinance` (free, no key needed) |
 | Push rejected — secrets | API key in a commit | Remove from commit history, rotate the key |
-| Indeed jobs not parsing | URL pattern mismatch | Check email source — add pattern to `parse_indeed_email()` regex |
 
 ---
 
-## 9. How Email Body Parsing Works
-
-This covers how `body` gets defined and flows through `job_alert_agent.py` —
-a question that comes up because `parse_email_body` receives `body` as a
-parameter but never defines it itself.
-
-### The Full Flow
-
-**Step 1 — IMAP fetches the raw email bytes**
-```python
-_, msg_data = mail.fetch(num, "(RFC822)")
-raw = msg_data[0][1]
-```
-`RFC822` is the standard email format. This returns the entire email as raw
-bytes — headers, body, attachments — exactly as received.
-
-**Step 2 — Python parses the bytes into an email object**
-```python
-msg = email_lib.message_from_bytes(raw)
-```
-Converts raw bytes into a structured Python object you can interrogate.
-Now you can ask questions like "is this multipart?" and "what's the content type?"
-
-**Step 3 — Extract the plain text body**
-```python
-body = ""
-if msg.is_multipart():
-    for part in msg.walk():
-        if part.get_content_type() == "text/plain":
-            body = part.get_payload(decode=True).decode("utf-8", errors="ignore")
-            break
-else:
-    body = msg.get_payload(decode=True).decode("utf-8", errors="ignore")
-```
-
-**Why the multipart check?**
-Emails often come in two flavors at once — a plain text version and an HTML
-version — bundled together as a "multipart" email. `is_multipart()` tells
-you which case you're in:
-- **Multipart:** `msg.walk()` iterates through all parts; we grab the first
-  `text/plain` one and stop
-- **Not multipart:** the whole message is plain text, so call `get_payload()` directly
-
-**What `.decode("utf-8", errors="ignore")` does:**
-`get_payload(decode=True)` returns raw `bytes`, not a `str`. The `.decode()`
-call converts bytes → Python string. `errors="ignore"` skips any characters
-that can't be decoded rather than crashing.
-
-**Step 4 — Pass body to the router**
-```python
-jobs = parse_email_body(body, num.decode(), source)
-```
-`body` is now a plain text string. `parse_email_body` routes it to the right
-parser based on `source` ("LinkedIn" or "Indeed").
-
-**Step 5 — Source-specific parsing**
-```python
-def parse_email_body(body, email_id, source):
-    if source == "LinkedIn":
-        return parse_linkedin_email(body, email_id)
-    elif source == "Indeed":
-        return parse_indeed_email(body, email_id)
-    return []
-```
-
-### LinkedIn vs Indeed Format Differences
-
-| | LinkedIn | Indeed |
-|---|---|---|
-| Job separator | Lines of 10+ dashes (`----------`) | Blank lines between blocks |
-| URL pattern | `linkedin.com/comm/jobs/view/1234567` | `indeed.com/rc/clk` or `r.indeed.com/...` |
-| Split strategy | `re.split(r'-{10,}', body)` | `re.split(r'\n{2,}', body)` |
-| URL extraction | Capture the numeric job ID, rebuild clean URL | Grab the raw URL as-is |
-
-### Key Takeaway
-`body` is always built in `main()` before any parser is called.
-`parse_email_body()` is a pure router — it receives the string and dispatches it.
-The source-specific parsers (`parse_linkedin_email`, `parse_indeed_email`) do
-the actual work of finding structure in that string.
-
----
-
-*Last updated: June 2026*
+*Last updated: May 2026*
 *Repo: github.com/haywooda1/ai_practice*
