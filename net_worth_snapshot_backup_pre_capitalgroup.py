@@ -5,7 +5,6 @@ net_worth_snapshot.py
 Daily net worth snapshot combining:
   - Live taxable brokerage positions (via yfinance)
   - Fidelity IRA / 401(k) positions (via exported CSV)
-  - Capital Group 401(k) positions (via exported CSV)
 
 Emails an HTML report similar to portfolio_monitor.py.
 
@@ -19,21 +18,17 @@ Dependencies:
   pip install yfinance python-dotenv
 
 Environment variables (in .env):
-  GMAIL_ADDRESS      - Gmail address used to send/receive
-  GMAIL_PASSWORD     - Gmail App Password (not your account password)
-  RECIPIENT_EMAIL    - Where to send the report (can be same as EMAIL_ADDRESS)
-  FIDELITY_CSV       - Full path to your Fidelity CSV export
-                       e.g. /Users/Adam/DEV_Space/ai_practice/fidelity_export.csv
-  CAPITALGROUP_CSV   - Full path to your Capital Group 401(k) CSV export
-                       e.g. /Users/Adam/DEV_Space/ai_practice/capitalgroup.csv
+  GMAIL_ADDRESS    - Gmail address used to send/receive
+  GMAIL_PASSWORD   - Gmail App Password (not your account password)
+  RECIPIENT_EMAIL  - Where to send the report (can be same as EMAIL_ADDRESS)
+  FIDELITY_CSV     - Full path to your Fidelity CSV export
+                     e.g. /Users/Adam/DEV_Space/ai_practice/fidelity_export.csv
 
 Notes:
   - Download your Fidelity CSV from: Accounts > Portfolio > Positions > Download
-  - Download your Capital Group CSV as a holdings export with columns:
-    Name, Symbol, Asset class, Units, Price, Balance, QTD change, YTD change
-  - Re-download either CSV whenever you want fresh data (weekly or monthly works fine)
-  - The script reads whatever CSV path is in FIDELITY_CSV / CAPITALGROUP_CSV — just
-    re-download and save to the same path each time, no script changes needed.
+  - Re-download it whenever you want fresh IRA/401k data (weekly or monthly works fine)
+  - The script reads whatever CSV path is in FIDELITY_CSV — just re-download and
+    save to the same path each time, no script changes needed.
 """
 
 import os
@@ -75,8 +70,7 @@ TAXABLE_POSITIONS = {
 #EMAIL_ADDRESS   = os.getenv("GMAIL_ADDRESS")
 #EMAIL_PASSWORD  = os.getenv("GMAIL_PASSWORD")
 #RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL", EMAIL_ADDRESS)
-FIDELITY_CSV     = os.getenv("FIDELITY_CSV", "")
-CAPITALGROUP_CSV = os.getenv("CAPITALGROUP_CSV", "")
+FIDELITY_CSV    = os.getenv("FIDELITY_CSV", "")
 
 
 # ─────────────────────────────────────────────
@@ -84,7 +78,7 @@ CAPITALGROUP_CSV = os.getenv("CAPITALGROUP_CSV", "")
 # ─────────────────────────────────────────────
 
 def clean_currency(value_str):
-    """Convert dollar strings like '$93,192.07' or '($0.09)' to float."""
+    """Convert Fidelity dollar strings like '$93,192.07' or '($0.09)' to float."""
     if pd.isna(value_str) or str(value_str).strip() in ("", "--", "N/A"):
         return 0.0
     s = str(value_str).strip()
@@ -164,59 +158,6 @@ def parse_fidelity_csv(csv_path):
         accounts[account_name] = {"holdings": holdings, "total": total}
 
     return accounts
-
-
-def parse_capitalgroup_csv(csv_path, account_name="Capital Group 401(k)"):
-    """
-    Parse a Capital Group 401(k) holdings export.
-
-    Expected columns:
-      Name, Symbol, Asset class, Units, Price, Balance, QTD change, YTD change
-
-    The export includes a trailing summary/"as of date" row with no Name —
-    that row is dropped.
-
-    Note: 'YTD change' is mapped to 'total_gain' for display purposes, but
-    represents year-to-date gain/loss, not lifetime gain/loss like Fidelity's
-    'Total Gain/Loss Dollar'. This export also doesn't provide a day gain or
-    cost basis, so those fields are set to 0.0.
-
-    Returns a dict: { account_name: { 'holdings': [...], 'total': float } }
-    """
-    if not csv_path or not os.path.exists(csv_path):
-        return {}
-
-    df = pd.read_csv(csv_path)
-    df.columns = [c.strip() for c in df.columns]
-
-    # Drop the trailing summary/blank row(s) — no Name means no real holding
-    df = df.dropna(subset=["Name"])
-    df = df[df["Name"].astype(str).str.strip() != ""]
-
-    holdings = []
-    total = 0.0
-    for _, row in df.iterrows():
-        symbol      = str(row.get("Symbol", "")).strip()
-        # Strip trailing dashes Capital Group appends to fund names (e.g. "...-R3--")
-        description = str(row.get("Name", "")).strip().rstrip("-").strip()
-        qty         = pd.to_numeric(row.get("Units", None), errors="coerce")
-        price       = clean_currency(row.get("Price", 0))
-        value       = clean_currency(row.get("Balance", 0))
-        ytd_gain    = clean_currency(row.get("YTD change", 0))
-
-        total += value
-        holdings.append({
-            "symbol":      symbol,
-            "description": description,
-            "quantity":    qty,
-            "price":       price,
-            "value":       value,
-            "day_gain":    0.0,        # not provided by this export
-            "total_gain":  ytd_gain,   # note: YTD, not lifetime
-            "cost_basis":  0.0,        # not provided by this export
-        })
-
-    return {account_name: {"holdings": holdings, "total": total}}
 
 
 def fetch_taxable_positions(positions):
@@ -300,7 +241,7 @@ def build_html(taxable_rows, fidelity_accounts, report_date):
           <td style="padding:10px 14px;color:{dg_color};font-weight:500;">{fmt_change(r['day_gain'])}</td>
         </tr>"""
 
-    # ── Fidelity / Capital Group account sections ──
+    # ── Fidelity account sections ──
     fidelity_html = ""
     for account_name, acct in fidelity_accounts.items():
         icon = "🏦" if "401" in account_name else "📈"
@@ -341,22 +282,11 @@ def build_html(taxable_rows, fidelity_accounts, report_date):
 
     # ── Summary cards ──
     fidelity_csv_note = ""
-    csv_notes = []
-    if FIDELITY_CSV and os.path.exists(FIDELITY_CSV):
+    if FIDELITY_CSV:
         csv_date = datetime.datetime.fromtimestamp(
             os.path.getmtime(FIDELITY_CSV)
         ).strftime("%b %d, %Y %I:%M %p")
-        csv_notes.append(f"Fidelity data from CSV exported {csv_date}")
-    if CAPITALGROUP_CSV and os.path.exists(CAPITALGROUP_CSV):
-        cg_date = datetime.datetime.fromtimestamp(
-            os.path.getmtime(CAPITALGROUP_CSV)
-        ).strftime("%b %d, %Y %I:%M %p")
-        csv_notes.append(f"Capital Group data from CSV exported {cg_date}")
-    if csv_notes:
-        fidelity_csv_note = "".join(
-            f'<p style="color:#94a3b8;font-size:12px;text-align:center;margin:6px 0 0;">{note}</p>'
-            for note in csv_notes
-        )
+        fidelity_csv_note = f'<p style="color:#94a3b8;font-size:12px;text-align:center;margin:6px 0 0;">Fidelity data from CSV exported {csv_date}</p>'
 
     html = f"""
 <!DOCTYPE html>
@@ -389,7 +319,7 @@ def build_html(taxable_rows, fidelity_accounts, report_date):
       <div style="flex:1;min-width:150px;background:#1e293b;border-radius:12px;padding:20px;text-align:center;border:1px solid #334155;">
         <div style="color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">IRA + 401(k)</div>
         <div style="color:#e2e8f0;font-size:20px;font-weight:700;">{fmt_dollar(fidelity_total)}</div>
-        <div style="color:#64748b;font-size:12px;margin-top:4px;">From CSV export(s)</div>
+        <div style="color:#64748b;font-size:12px;margin-top:4px;">From CSV export</div>
       </div>
 
     </div>
@@ -425,7 +355,7 @@ def build_html(taxable_rows, fidelity_accounts, report_date):
             <td style="padding:12px 14px;color:{color(taxable_day_gain)};font-weight:600;">{fmt_change(taxable_day_gain)}</td>
           </tr>
 
-          <!-- Fidelity / Capital Group Accounts -->
+          <!-- Fidelity Accounts -->
           {fidelity_html}
 
           <!-- Grand Total -->
@@ -498,27 +428,17 @@ def main():
     fidelity_accounts = {}
     if FIDELITY_CSV:
         print(f"📂 Parsing Fidelity CSV: {FIDELITY_CSV}")
-        fidelity_accounts.update(parse_fidelity_csv(FIDELITY_CSV))
+        fidelity_accounts = parse_fidelity_csv(FIDELITY_CSV)
         for name, acct in fidelity_accounts.items():
             print(f"   {name}: {fmt_dollar(acct['total'])}")
     else:
-        print("⚠️  FIDELITY_CSV not set in .env — skipping Fidelity accounts")
-
-    # 3. Capital Group CSV (401k)
-    if CAPITALGROUP_CSV:
-        print(f"📂 Parsing Capital Group CSV: {CAPITALGROUP_CSV}")
-        capitalgroup_accounts = parse_capitalgroup_csv(CAPITALGROUP_CSV)
-        fidelity_accounts.update(capitalgroup_accounts)
-        for name, acct in capitalgroup_accounts.items():
-            print(f"   {name}: {fmt_dollar(acct['total'])}")
-    else:
-        print("⚠️  CAPITALGROUP_CSV not set in .env — skipping Capital Group account")
+        print("⚠️  FIDELITY_CSV not set in .env — skipping retirement accounts")
 
     fidelity_total = sum(a["total"] for a in fidelity_accounts.values())
     grand_total    = taxable_total + fidelity_total
     print(f"💰 Grand Total: {fmt_dollar(grand_total)}")
 
-    # 4. Build + send report
+    # 3. Build + send report
     html = build_html(taxable_rows, fidelity_accounts, report_date)
     subject = f"💼 Net Worth Snapshot — {fmt_dollar(grand_total)} — {datetime.datetime.now().strftime('%b %d, %Y')}"
     send_email(subject, html)
