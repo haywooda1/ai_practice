@@ -63,7 +63,7 @@ TAXABLE_POSITIONS = {
     "QBTS": {"name": "D-Wave Quantum",        "shares": 168, "note": ""},
     "RIOT": {"name": "Riot Platforms",        "shares": 30,  "note": ""},
     "RIVN": {"name": "Rivian",                "shares": 100, "note": ""},
-    "SOFI": {"name": "SoFi Technologies",     "shares": 100, "note": ""},
+    "SOFI": {"name": "SoFi Technologies",     "shares": 150, "note": ""},
     "ZS":   {"name": "Zscaler",               "shares": 9,   "note": ""},
     "NTAP":  {"name": "NetApp", "shares": 1928,   "note": ""},
     # Add / remove tickers as needed

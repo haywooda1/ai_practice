@@ -41,6 +41,3 @@ pass_list = list(class_pass.values())
 print (pass_list)
 remainder = 10 % 2
 print (f"This is the remainder: {remainder}")
-
-import os
-help (os)

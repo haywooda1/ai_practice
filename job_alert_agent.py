@@ -18,49 +18,67 @@ client = anthropic.Anthropic()
 MY_BACKGROUND = """
 Name: Adam Haywood
 Location: Raleigh-Durham, NC (open to remote, hybrid, or on-site in RDU area)
+Resume Title: Engineering Leader — Platform Delivery, Reliability & Engineering Operations
 
 TARGET ROLES (in priority order):
-1. Director / VP of Engineering — Platform Delivery, Reliability, or Engineering Operations
-2. Senior Engineering Manager — Platform, DevOps, SRE, Quality Engineering, or Enablement
-3. Director of Quality Engineering / Engineering Enablement
+1. Senior Engineering Manager — Platform, DevOps, SRE, Quality Engineering, or Enablement (PRIMARY TARGET)
+2. Director of Engineering — Platform Delivery, Reliability, or Engineering Operations (upside, not required)
+3. Director of Quality Engineering / Engineering Enablement (upside, not required)
 4. Head of Engineering Operations or Technical Program Delivery
 
+SCOPE OVER TITLE: Evaluate the role primarily by its actual scope and responsibility —
+team size, ownership of delivery/reliability/quality outcomes, cross-functional influence —
+rather than requiring the literal words "Senior," "Director," or "VP" in the title.
+A "Engineering Manager, Platform Reliability" with real organizational ownership can score
+as well as a title with a more senior-sounding label. Title text is a signal, not a gate.
+
 SUMMARY:
-Engineering leader with 25+ years of experience owning platform delivery, engineering
-operations, and quality systems at enterprise scale. Known for building and scaling
-high-performing distributed teams, operationalizing SDLC governance and CI/CD practices,
-and driving measurable improvement in release velocity and platform stability. Enabled
-$94.5M in quarterly revenue through disciplined delivery execution and partner readiness.
-Deep experience leading cross-functional alignment across Product, Architecture, and
-Program teams — with a hands-on approach to both people leadership and technical craft.
+Engineering leader with 25+ years of experience leading platform delivery, production
+reliability, quality engineering, and partner enablement at enterprise scale. Owned the
+engineering operations and delivery governance that directly enabled $94.5M in quarterly
+revenue. Proven track record building and scaling high-performing engineering teams,
+operationalizing AI/ML-enabled automation, and establishing the SDLC governance, CI/CD
+practices, and operational excellence standards that ensure production-grade systems
+perform under load. Strong credibility in distributed systems, cross-functional
+leadership, and engineering change management — with a hands-on approach to both
+people and craft.
 
-KEY STRENGTHS:
-- Platform Delivery & Engineering Operations Leadership
-- SDLC Governance, CI/CD Adoption & Engineering Excellence
-- Site Reliability, Production Stability & Incident Management
-- Quality Engineering, Test Strategy & Release Governance
-- Engineering Enablement — Partner, Customer & Internal Teams
-- Technical Roadmap Ownership aligned to Business Outcomes
-- Engineering Talent Strategy, Coaching & Career Development
-- Capex/Opex Planning, SOW Negotiation & Vendor Governance
-- AI/ML-Enabled Automation & Modern Engineering Practices
-- Cross-Functional Leadership: Product, Program, Architecture, Sales
+CORE COMPETENCIES:
+- Platform Engineering & Delivery Leadership
+- Production Reliability & Site Operations
+- Quality Engineering at Enterprise Scale
+- SDLC Governance & Release Engineering
+- CI/CD Pipelines & Engineering Automation
+- AI/ML-Enabled Engineering Modernization
+- Capex/Opex Planning & Vendor Governance
+- Engineering Talent Strategy & Org Development
+- Cross-Functional Leadership: Product, Program, Architecture
+- Distributed Systems, APIs & Multi-Platform Integration
 
-TEAM SCALE: 10 FTEs + 18 contingent engineers, globally distributed
-DOMAIN DEPTH: Enterprise storage/infrastructure (NetApp ONTAP, SAN/NAS),
-              Distributed systems, Interoperability ecosystems
+EXPERIENCE SCALE (most recent role):
+Directed a globally distributed engineering organization of 28 (10 FTEs + 18 contingent
+engineers) across multiple time zones. Owned delivery governance, quality standards, and
+release controls for revenue-critical platform releases. Served on cross-functional
+portfolio councils driving investment prioritization and risk governance.
+
+DOMAIN DEPTH: Enterprise storage/infrastructure (NetApp ONTAP, SAN/NAS), distributed
+              systems, multi-platform interoperability (Solaris, RHEL, AIX, HP-UX, Windows),
+              production incident response and root cause analysis
 
 AI LEADERSHIP & HANDS-ON PRACTICE:
 Actively building AI-powered tools daily using the Claude API and LLM-driven workflows.
-Led teams adopting multi-agent automation. Able to direct AI strategy and translate it
-for both engineers and executives.
+Led strategy and operationalization of AI/ML-enabled automation including multi-agent
+failure triage. Able to direct AI strategy and translate it for both engineers and executives.
 
-SENIORITY: Senior Manager or Director level — VP considered for right scope
+SENIORITY: Senior Manager is the primary target level. Director is a welcome stretch but
+           not a requirement — do not penalize a role for being titled "Manager" if the
+           described scope (team size, delivery ownership, cross-functional reach) matches
+           or exceeds Senior Manager-level responsibility.
 INDUSTRY FIT: Enterprise tech, cloud infrastructure, platform/SRE, AI/ML, storage,
               networking, DevOps tooling, developer platforms
 NOT A FIT: Individual contributor (IC) engineering roles, pure software development,
-           SWE / Staff Engineer roles requiring hands-on coding, sales, finance,
-           non-technical management
+           SWE / Staff Engineer roles requiring hands-on coding as primary output,
+           sales, finance, non-technical management
 """
 
 # Minimum match score to include in digest (0-100)
@@ -228,9 +246,9 @@ against a candidate's background and return ONLY a JSON object with no other tex
 SCORING CRITERIA (each 0-25 points):
 
 1. title_fit — Does the job title match the candidate's target roles?
-   STRONG (20-25): Director/VP/Head of Engineering, Platform, SRE, DevOps,
-                   Quality Engineering, Engineering Operations, Engineering Enablement,
-                   Senior Engineering Manager in those domains
+   STRONG (20-25): Senior Engineering Manager, Engineering Manager, Director/Head of
+                   Engineering — in Platform, SRE, DevOps, Quality Engineering,
+                   Engineering Operations, or Engineering Enablement
    MODERATE (10-19): Engineering Manager (without platform/ops/quality context),
                      Technical Program Manager, Engineering Lead
    WEAK (0-9): Software Engineer, Staff Engineer, Principal Engineer, SWE,
@@ -245,10 +263,20 @@ SCORING CRITERIA (each 0-25 points):
    WEAK (0-9): Requires hands-on coding as primary responsibility, deep SWE skills
                (TypeScript, React, Java, Python development), architecture as IC
 
-3. seniority_level — Is this the right organizational level?
-   STRONG (20-25): Director, VP, Head, Senior Manager with team ownership
-   MODERATE (10-19): Manager (smaller scope), Senior IC with influence
-   WEAK (0-9): IC roles regardless of title prestige, junior/mid management
+3. seniority_level — Score the ACTUAL SCOPE described in the listing, not the title text.
+   Look for signals of: team size managed, budget/vendor ownership, delivery or reliability
+   accountability, cross-functional/organizational influence, and whether the role manages
+   managers or individual engineers.
+   STRONG (20-25): Manages a team with real delivery/reliability/quality ownership —
+                   regardless of whether the title says "Manager," "Senior Manager," or
+                   "Director." A "Manager" title with team-of-8+ and cross-org scope
+                   scores here just as well as a "Director" title with similar scope.
+   MODERATE (10-19): Smaller team scope (1-4 reports), narrower ownership, or a senior
+                     IC role with some informal influence but no direct reports.
+   WEAK (0-9): No management scope at all (pure IC), or junior/coordinator-level roles
+               regardless of title.
+   IMPORTANT: Do not require the word "Senior," "Director," or "VP" to appear in order
+   to score in the STRONG range — judge by described scope and responsibility.
 
 4. industry_fit — Is this the right domain and company type?
    STRONG (20-25): Enterprise tech, cloud infrastructure, storage/networking,
@@ -264,8 +292,8 @@ AUTOMATIC SCORE CAPS — apply these before returning:
   cap title_fit at 10 and skill_match at 12 regardless of other factors.
 - If the role requires hands-on coding as primary output:
   cap skill_match at 12.
-- If seniority is below Senior Manager equivalent:
-  cap seniority_level at 10.
+- If the role has no management/ownership scope at all (pure IC, no reports, no
+  delivery ownership): cap seniority_level at 10.
 
 Also include:
 - total: sum of all four scores (0-100)
@@ -275,8 +303,8 @@ Also include:
                   "Weak Match" (40-59), or "Skip" (below 40)
 
 Return ONLY valid JSON. Example:
-{"title_fit":22,"skill_match":21,"seniority_level":24,"industry_fit":20,
- "total":87,"why_good":"Director of Platform Engineering title and SRE/reliability scope align directly with candidate's target positioning and operational leadership depth.",
+{"title_fit":22,"skill_match":21,"seniority_level":23,"industry_fit":20,
+ "total":86,"why_good":"Engineering Manager, Platform Reliability with an 8-person team and direct delivery ownership matches candidate's primary target scope despite the non-Director title.",
  "concerns":"None",
  "recommendation":"Strong Match"}""",
         messages=[{
@@ -527,7 +555,7 @@ def build_html_digest(scored_jobs, all_count, source_counts):
             {date_str}
         </div>
         <div style="font-size:13px;color:#94a3b8;margin-top:4px;">
-            Adam Haywood &nbsp;&middot;&nbsp; Platform Delivery / Engineering Operations / Quality Engineering
+            Adam Haywood &nbsp;&middot;&nbsp; Platform Delivery, Reliability &amp; Engineering Operations
         </div>
         <div style="font-size:12px;color:#64748b;margin-top:6px;">
             Sources: {source_line}
@@ -564,7 +592,7 @@ def build_html_digest(scored_jobs, all_count, source_counts):
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6;
                     font-size:12px;color:#9ca3af;">
             Threshold: {SCORE_THRESHOLD}+ / 100 &nbsp;&middot;&nbsp;
-            Scored against Platform Delivery / Director profile &nbsp;&middot;&nbsp;
+            Scored against Senior Manager / Platform Delivery profile &nbsp;&middot;&nbsp;
             Ranked highest to lowest
         </div>
     </div>

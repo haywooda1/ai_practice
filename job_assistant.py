@@ -20,60 +20,74 @@ MY_BACKGROUND = """
 Name: Adam Haywood
 Location: Raleigh-Durham, NC
 Contact: unixnrdu@yahoo.com | (919)880-8528 | linkedin.com/in/haywooda
-#Identity: U.S. Navy Veteran | 25+ Years Experience
-Identity: 25+ Years Experience
+Resume Title: Engineering Leader — Platform Delivery, Reliability & Engineering Operations
+Identity: U.S. Navy Veteran | 25+ Years Experience
+
+TARGET ROLES (in priority order):
+1. Senior Engineering Manager — Platform, DevOps, SRE, Quality Engineering, or Enablement (PRIMARY TARGET)
+2. Director of Engineering — Platform Delivery, Reliability, or Engineering Operations (upside, not required)
+3. Director of Quality Engineering / Engineering Enablement (upside, not required)
+4. Head of Engineering Operations or Technical Program Delivery
 
 EXECUTIVE SUMMARY:
-Senior Engineering Manager with 25+ years of experience leading global R&D,
-Quality Engineering, and Interoperability organizations across enterprise
-infrastructure platforms. Track record of aligning complex engineering execution
-with customer and go-to-market priorities, helping support over $94M in quarterly
-corporate revenue through accelerated partner and customer readiness. Experienced
-in scaling high-impact teams, owning Capex/Opex planning and spend governance,
-and driving AI/ML-enabled automation initiatives that improve operational
-efficiency, decision quality, and delivery velocity.
+Engineering leader with 25+ years of experience leading platform delivery, production
+reliability, quality engineering, and partner enablement at enterprise scale. Owned the
+engineering operations and delivery governance that directly enabled $94.5M in quarterly
+revenue. Proven track record building and scaling high-performing engineering teams,
+operationalizing AI/ML-enabled automation, and establishing the SDLC governance, CI/CD
+practices, and operational excellence standards that ensure production-grade systems
+perform under load. Strong credibility in distributed systems, cross-functional
+leadership, and engineering change management — with a hands-on approach to both
+people and craft.
 
 CORE COMPETENCIES:
-- Executive Leadership: Strategic planning and execution; global team leadership
-  across FTE and contingent models; Capex/Opex and budget optimization; SOW and
-  vendor management aligned to business and delivery objectives.
-- Innovation & AI: Championed enterprise adoption of AI/ML-enabled automation to
-  accelerate failure triage, improve engineering throughput, and reduce manual
-  diagnostic effort across large-scale QA and R&D organizations.
-- Technical Ecosystems: Directed validation and enablement of complex Linux,
-  networking, and storage ecosystems ensuring scalable, high-performance platforms.
-- Storage & Interoperability: Multi-vendor storage and fabric interoperability
-  (NetApp ONTAP, EMC, Hitachi, HP, Cisco, Brocade).
-- Compliance & Strategy: Governance and risk leadership; alignment of technical
-  roadmaps with corporate financial, compliance, and go-to-market priorities.
+- Platform Engineering & Delivery Leadership
+- Production Reliability & Site Operations
+- Quality Engineering at Enterprise Scale
+- SDLC Governance & Release Engineering
+- CI/CD Pipelines & Engineering Automation
+- AI/ML-Enabled Engineering Modernization
+- Capex/Opex Planning & Vendor Governance
+- Engineering Talent Strategy & Org Development
+- Cross-Functional Leadership: Product, Program, Architecture
+- Distributed Systems, APIs & Multi-Platform Integration
 
 PROFESSIONAL EXPERIENCE:
 
-NetApp | Raleigh-Durham, NC | Jan 2005 – Recent
+NetApp | Raleigh-Durham, NC | Jan 2005 – May 2026
 
-Senior Manager, Partner & Customer Enablement Solutions | June 2021 – Recent
-- Directed FPVR testing and delivery supporting $94.5M in Q1/Q2 revenue through
-  accelerated partner and customer readiness.
-- Drove AI-enabled automation including multi-agent failure-triage capabilities,
-  reducing manual diagnostic effort and improving testing velocity.
-- Led globally distributed organization of 10 FTEs and 18 contingent resources.
+Senior Manager, Partner & Customer Enablement Solutions | June 2021 – May 2026
+- Owned engineering delivery and partner readiness governance that directly enabled
+  $94.5M in Q1/Q2 quarterly revenue.
+- Led strategy and operationalization of AI/ML-enabled automation including multi-agent
+  failure triage — reducing manual diagnostic effort and increasing testing velocity.
+- Built and led a globally distributed organization of 10 FTEs and 18 contingent
+  engineers across multiple time zones.
+- Established delivery governance frameworks, quality standards, and release controls
+  that improved execution consistency and maintained platform reliability.
 - Owned Capex/Opex planning, SOW negotiation, and vendor oversight.
-- Served on cross-functional portfolio councils prioritizing revenue-critical releases.
+- Served on cross-functional portfolio councils (FPVR, PPMF) driving investment
+  prioritization and risk governance for revenue-critical platform releases.
 
 Manager, Partner & Customer Enablement Solutions | June 2011 – June 2021
-- Scaled Quality Engineering capabilities sustaining 99.9% interoperability
-  standards across complex multi-vendor environments.
-- Established standardized R&D and QA workflows reducing time-to-market.
+- Scaled and led quality engineering capabilities supporting SAN/NAS storage and
+  distributed system technologies — sustaining 99.9% interoperability standards.
+- Established standardized R&D and quality engineering workflows and release controls.
+- Directed validation engineering for distributed storage platforms and API-driven
+  integration architectures.
 - Partnered with R&D, Product Management, and external technology partners.
 
-Team Lead, Rapid Response Engineering QA/Interoperability | Jan 2005 – May 2011
-- Led QA and interoperability efforts across heterogeneous SAN environments.
+Team Lead, Rapid Response Engineering (RRE) — QA & Interoperability | Jan 2005 – May 2011
+- Led production incident response, root cause analysis, and platform interoperability
+  engineering for customer-critical multi-platform environments.
 - Architected SAN test strategies across Solaris, RHEL, AIX, HP-UX, Windows.
-- Introduced automation to streamline lab provisioning and test execution.
+- Introduced automation to streamline lab provisioning, CI pipeline workflows, and
+  test execution.
 
 MILITARY SERVICE:
-United States Navy — Electronics Technician
-Specialized in SATCOM, microwave communications, and navigation systems.
+United States Navy — Electronics Technician, Honorably Discharged
+Specialized in Satellite and Radar equipment, microwave communications, and
+navigation systems.
 
 CURRENTLY LEARNING:
 Hands-on AI development — Claude API, MCP servers, Python agents, GitHub.
@@ -102,13 +116,17 @@ def generate_cover_letter(job_description):
         model="claude-sonnet-4-5",
         max_tokens=1024,
         system="""You are an expert career coach and cover letter writer specializing
-in senior engineering and AI leadership roles. Write a tailored, compelling cover
-letter based on the candidate's background and the job description provided.
+in platform delivery, engineering reliability, and engineering operations leadership
+roles. Write a tailored, compelling cover letter based on the candidate's background
+and the job description provided.
 
 Guidelines:
 - Be specific — reference actual requirements from the job posting by name
-- Lead with the candidate's most relevant strength for THIS role
-- Highlight the $94.5M revenue impact and AI/ML automation work where relevant
+- Lead with platform delivery, reliability, or engineering operations framing as the
+  primary hook — the $94.5M revenue impact and AI/ML automation work are supporting
+  proof points, not the headline
+- Match the seniority signaled by the job posting — do not over-claim Director/VP
+  scope if the role reads as Senior Manager level, and vice versa
 - Mention Navy veteran background if the role values leadership or discipline
 - Keep it to 3-4 tight paragraphs — hiring managers don't read long letters
 - Professional but warm tone — avoid stiff corporate language
@@ -200,7 +218,7 @@ def save_cover_letter(cover_letter, job_description, job_title):
     subtitle_para = doc.add_paragraph()
     subtitle_para.paragraph_format.space_after = Pt(2)
     sub_run = subtitle_para.add_run(
-        "Senior Engineering Manager  |  Quality Engineering & Partner Enablement"
+        "Engineering Leader — Platform Delivery, Reliability & Engineering Operations"
     )
     style_run(sub_run, size=10, color=(85, 85, 85))
  

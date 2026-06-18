@@ -35,7 +35,7 @@ POSITIONS = {
     "QBTS": {"name": "D-Wave Quantum",        "shares": 168, "cost_basis": 9.517976},
     "RIOT": {"name": "Riot Platforms",        "shares": 30,  "cost_basis": 10.22},
     "RIVN": {"name": "Rivian",                "shares": 100, "cost_basis": 12.64},
-    "SOFI": {"name": "SoFi Technologies",     "shares": 100, "cost_basis": 9.30},
+    "SOFI": {"name": "SoFi Technologies",     "shares": 150, "cost_basis": 9.30},
     "ZS":   {"name": "Zscaler",               "shares": 9,   "cost_basis": 133.41},
 }
 
