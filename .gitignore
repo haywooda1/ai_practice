@@ -226,3 +226,4 @@ portfolio_reports/
 job_digests/
 capitalgroup.csv
 fidelity_export.csv
+.DS_Store
