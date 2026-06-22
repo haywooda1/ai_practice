@@ -130,6 +130,185 @@ Confirmed: requests genuinely spread across different pod names, with real pod s
 
 ---
 
+## Building and deploying a custom image
+
+This is the real-world pattern — building your own application image rather than deploying someone else's pre-built one.
+
+### Project structure
+
+```
+k8s_webapp/
+  Dockerfile      # recipe for building the image (capital D, no extension)
+  index.html      # your custom content
+```
+
+### Dockerfile — working hardened version (v3)
+
+```dockerfile
+FROM nginx:latest
+
+COPY index.html /usr/share/nginx/html/index.html
+
+RUN chown nginx:nginx /usr/share/nginx/html/index.html
+
+RUN chown -R nginx:nginx /var/cache/nginx /var/run \
+    && touch /var/run/nginx.pid \
+    && chown nginx:nginx /var/run/nginx.pid
+
+USER nginx
+```
+
+**Why each line matters:**
+- `FROM nginx:latest` — starts from the official nginx image as a base layer; your changes stack on top
+- `COPY` — runs during build as root; copies your HTML into nginx's web root
+- First `RUN chown` — fixes ownership of your copied file
+- Second `RUN chown -R` — pre-creates and fixes ownership of nginx's cache directories and PID file *before* switching user; this is the critical fix (see troubleshooting below)
+- `USER nginx` — switches the runtime process to non-root; everything after this point runs as nginx
+
+### Build, test locally, then deploy to kind
+
+```bash
+# build
+docker build -t my-k8s-app:v3 .
+
+# test with plain Docker FIRST — isolates image issues from Kubernetes issues
+docker run --rm -d -p 8081:80 --name test-v3 my-k8s-app:v3
+docker run --rm my-k8s-app:v3 whoami    # should return "nginx" not "root"
+curl localhost:8081                      # should return your custom HTML
+docker rm -f test-v3
+
+# load into kind node (required — kind cluster can't see Mac's Docker image store directly)
+kind load docker-image my-k8s-app:v3 --name dgx-practice
+
+# deploy
+kubectl create deployment my-app --image=my-k8s-app:v3
+kubectl get pods                         # watch for 1/1 Running, zero restarts
+kubectl expose deployment my-app --port=80 --type=NodePort
+```
+
+### Image store separation — critical concept
+
+There are two completely separate image inventories:
+
+```
+Mac's Docker store    →  docker images             (what you've built/pulled locally)
+kind node's cache     →  crictl images (inside node) (what Kubernetes can actually deploy)
+```
+
+`kind load docker-image` is the explicit copy step between them — nothing flows through automatically. Every new image version needs both `docker build` AND `kind load` before Kubernetes can use it.
+
+```bash
+# see Mac's Docker store
+docker images
+
+# see kind node's internal cache
+docker exec -it dgx-practice-control-plane crictl images
+```
+
+### Rolling updates (updating a running deployment)
+
+Don't create a new deployment for each version — update the existing one:
+
+```bash
+# first confirm exact container name (not the same as deployment name)
+kubectl describe deployment my-app | grep -A2 "Containers:"
+
+# rolling update — replaces pods one at a time, keeps service available throughout
+kubectl set image deployment/my-app my-k8s-app=my-k8s-app:v3
+kubectl rollout status deployment/my-app
+
+# verify which image pods are actually running
+kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"  ->  "}{.spec.containers[*].image}{"\n"}{end}'
+
+# verify running user inside the live pod
+kubectl exec deployment/my-app -- whoami
+
+# roll back if something broke
+kubectl rollout undo deployment/my-app
+```
+
+**Container name gotcha**: `kubectl set image` requires the *container's* name (left side of `=`), not the deployment name. When you run `kubectl create deployment my-app --image=my-k8s-app:v3`, Kubernetes names the container after the *image* (`my-k8s-app`), not the deployment (`my-app`). Always confirm with `kubectl describe deployment <name> | grep -A2 "Containers:"` before running `set image`.
+
+### Inspect image filesystem
+
+```bash
+# list files in a specific directory inside the image
+docker run --rm my-k8s-app:v3 ls -la /usr/share/nginx/html/
+
+# interactive shell inside the image (exits and auto-removes when done)
+docker run --rm -it my-k8s-app:v3 sh
+
+# check architecture of a built image
+docker inspect my-k8s-app:v3 --format '{{.Architecture}}'
+```
+
+### Docker storage and space management
+
+```bash
+docker system df                  # breakdown of image/container/volume/cache usage
+docker system prune               # remove stopped containers, dangling images, unused cache
+docker image rm my-k8s-app:v1    # remove a specific image
+```
+
+Docker Desktop's VM disk ceiling is set in GUI: Settings → Resources → Advanced → Virtual disk limit. Default is usually 64GB; grows on demand up to that ceiling, doesn't pre-allocate.
+
+---
+
+## Architecture transition: Intel → ARM (Apple Silicon)
+
+### What happened
+Migrating a Mac from Intel (x86_64/amd64) to ARM (Apple Silicon/arm64) breaks existing kind clusters and tool installations because: Docker images are compiled for a specific CPU architecture, Homebrew installs to a different path on ARM (`/opt/homebrew/bin` vs Intel's `/usr/local/bin`), and kind/kubectl binaries need to be ARM-native.
+
+### Symptoms
+- `kind` and `kubectl` not found after migration (Homebrew PATH issue or tools not reinstalled for ARM)
+- kind cluster starts but Kubernetes API server never comes up (`connection refused` on kubectl commands)
+- Pod errors related to cgroups, `/sys` remounting, or privileged operations
+- `docker logs dgx-practice-control-plane` shows `INFO: starting init` as the last line with nothing following
+
+### Diagnosis commands
+```bash
+docker info | grep Architecture          # confirm Docker is running ARM-native
+docker inspect <image> --format '{{.Architecture}}'  # check a specific image's arch
+which kind || echo "not found"           # confirm kind is on PATH
+which kubectl || echo "not found"        # confirm kubectl is on PATH
+echo $PATH                               # check Homebrew path is included
+docker logs dgx-practice-control-plane  # check node container startup
+```
+
+### Fix: clean reinstall after architecture transition
+
+```bash
+# 1. remove zombie container if kind delete cluster failed to clean up
+docker rm -f dgx-practice-control-plane
+
+# 2. clean up stale kubectl context
+kind delete cluster --name dgx-practice   # may partially fail, that's fine
+
+# 3. reinstall tools (Homebrew will pull ARM-native binaries)
+brew install kind
+brew install kubectl
+
+# 4. confirm versions
+kind version
+kubectl version --client
+
+# 5. recreate cluster fresh (kind auto-pulls ARM-native node image)
+kind create cluster --name dgx-practice
+kubectl get nodes                         # should show Ready
+```
+
+### Key insight
+"Container is Up" (per `docker ps`) and "Kubernetes API server is running" are two different things. The kind node container can show as `Up` while the Kubernetes processes inside it (API server, etcd, scheduler) never started. Always verify with `kubectl get nodes` returning `Ready`, not just `docker ps` showing `Up`.
+
+### Two kindest/node images showing in docker images
+```
+kindest/node:v1.36.1                    (human-readable tag)
+kindest/node@sha256:3489c767...         (pulled by digest)
+```
+Same image, same ID, two references — not double storage. Docker deduplicates by layer content; the `DISK USAGE` column in `docker system df` reflects real usage, not per-tag double-counting.
+
+---
+
 ## Cleanup
 
 ```bash
@@ -158,8 +337,15 @@ Concept: ArgoCD watches a Git repo and reconciles the *whole cluster* against it
 |---|---|---|
 | `kind create cluster` fails with "Cannot connect to the Docker daemon" | Docker Desktop not installed or not running | `brew install --cask docker`, then `open -a Docker`, wait for whale icon to settle, confirm with `docker ps` |
 | `port-forward` shows only one pod name in logs no matter how many times you curl | port-forward bypasses the Service's load balancer, tunnels to one pod for the whole session | Use `kubectl run tmp-curl ... -- sh` and `curl hello` from inside the cluster instead |
-| Pod stuck in `ImagePullBackOff` / `ErrImagePull` | Image name doesn't exist or typo in `--image=` | Verify with `docker pull <image>` manually first |
+| Pod stuck in `ImagePullBackOff` / `ErrImagePull` | Image name doesn't exist, typo in `--image=`, or image not loaded into kind node | Verify with `docker pull <image>` first; confirm `kind load docker-image` completed |
 | Forgot which cluster kubectl is pointed at | Multiple contexts saved, wrong one is "current" | `kubectl config current-context` before anything destructive |
+| `kubectl set image` returns "unable to find container named X" | Container name inside deployment ≠ deployment name; Kubernetes names container after the image, not the deployment | Run `kubectl describe deployment <name> | grep -A2 "Containers:"` to get real container name |
+| Pod in `Error` / `CrashLoopBackOff` after adding `USER nginx` to Dockerfile | nginx base image assumes root startup to create cache dirs; `USER nginx` bypasses that | Pre-create and chown `/var/cache/nginx`, `/var/run`, and nginx.pid before `USER nginx` directive (see hardened Dockerfile above) |
+| `mkdir() "/var/cache/nginx/client_temp" failed (13: Permission denied)` in pod logs | Same as above — nginx can't create its working directories as non-root | Apply the full `RUN chown -R nginx:nginx /var/cache/nginx /var/run` fix in Dockerfile |
+| `kind create cluster` fails with "container name already in use" | Previous cluster deletion failed, leaving zombie container | `docker rm -f dgx-practice-control-plane` then retry `kind create cluster` |
+| `kubectl get nodes` returns `connection refused` after architecture migration | kind node container is Up but Kubernetes API server inside it never started — architecture mismatch or cgroup issue | Delete zombie container, reinstall kind/kubectl via Homebrew for ARM, recreate cluster fresh |
+| `kind` or `kubectl` not found after Intel → ARM migration | Homebrew PATH changed (`/opt/homebrew/bin` on ARM vs `/usr/local/bin` on Intel) or tools not reinstalled | `brew install kind && brew install kubectl`; confirm with `which kind` |
+| `docker build` fails with "requires 1 argument" | Missing build context path (the trailing `.`) | Always end `docker build -t name:tag .` with a space and `.` for current directory, or provide explicit path |
 
 ---
 
