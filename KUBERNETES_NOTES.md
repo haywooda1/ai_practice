@@ -331,6 +331,105 @@ Concept: ArgoCD watches a Git repo and reconciles the *whole cluster* against it
 
 ---
 
+## End-to-end runbook: Docker running → app live in Kubernetes
+
+Starting point: Docker Desktop is open and the whale icon is steady.
+
+### Step 1: Confirm Docker is actually up
+```bash
+docker ps
+```
+Empty table = Docker daemon is running and ready. If you get a connection error, open Docker Desktop from Applications and wait for the whale icon to stop animating.
+
+### Step 2: Create your cluster
+```bash
+kind create cluster --name dgx-practice
+```
+Spins up a single Docker container acting as a full Kubernetes node — control plane, reconciliation loop, and all — and automatically writes connection info into `~/.kube/config`.
+
+Verify it's genuinely alive (not just "container is Up"):
+```bash
+kubectl get nodes
+```
+Must return `Ready`. That's the API server responding — not just Docker reporting the container is running. Two different things.
+
+### Step 3: Build your application image
+```bash
+cd ~/DEV_Space/ai_practice/k8s_webapp
+docker build -t my-k8s-app:v3 .
+```
+The `.` at the end is not optional — it tells Docker where the build context lives. Capital `D` on `Dockerfile`, no extension.
+
+### Step 4: Test the image locally with plain Docker first
+Always do this before touching Kubernetes — isolates "is my image broken" from "is my Kubernetes config broken":
+```bash
+docker run --rm -d -p 8081:80 --name test-app my-k8s-app:v3
+curl localhost:8081                       # should return your custom HTML
+docker run --rm my-k8s-app:v3 whoami    # should return "nginx" not "root"
+docker rm -f test-app
+```
+
+### Step 5: Load your image into the kind node
+The kind node is a separate, isolated environment — it cannot see your Mac's Docker image store directly. You must explicitly copy the image across:
+```bash
+kind load docker-image my-k8s-app:v3 --name dgx-practice
+```
+Confirm it landed inside the node:
+```bash
+docker exec -it dgx-practice-control-plane crictl images
+```
+
+### Step 6: Deploy to Kubernetes
+```bash
+kubectl create deployment my-app --image=my-k8s-app:v3
+kubectl get pods
+```
+Watch for `1/1 Running` with zero restarts. If you see `Error` or `CrashLoopBackOff`, check logs immediately:
+```bash
+kubectl logs <pod-name>
+kubectl logs <pod-name> --previous    # if it's already cycled through restarts
+```
+
+### Step 7: Expose it via a Service
+```bash
+kubectl expose deployment my-app --port=80 --type=NodePort
+kubectl get service my-app
+```
+Creates the stable front-end that load-balances across pods using label selectors. Output shows a port mapping like `80:31xxx/TCP` — the number after the colon is the NodePort.
+
+### Step 8: Confirm traffic is actually flowing
+NodePort isn't directly reachable from your Mac due to kind's networking. Use a temporary pod inside the cluster network instead:
+```bash
+kubectl run tmp-curl --image=curlimages/curl --rm -it --restart=Never -- sh
+# inside that shell:
+curl my-app
+exit
+```
+Your custom HTML coming back confirms the full chain: image → kind load → Deployment → Service → real traffic.
+
+### Step 9: Update to a new version (rolling update)
+When you make changes and rebuild:
+```bash
+docker build -t my-k8s-app:v4 .
+kind load docker-image my-k8s-app:v4 --name dgx-practice
+kubectl set image deployment/my-app my-k8s-app=my-k8s-app:v4
+kubectl rollout status deployment/my-app
+```
+Kubernetes replaces pods one at a time — the Service stays available throughout. Roll back instantly if something breaks:
+```bash
+kubectl rollout undo deployment/my-app
+```
+
+### Step 10: Tear down when done
+```bash
+kind delete cluster --name dgx-practice
+```
+Clusters are disposable — cheap to destroy, cheap to recreate. Don't leave them running when not in use.
+
+**Mental model across all of this**: Docker is the engine. kind uses Docker to fake a real server. Kubernetes runs inside that fake server and manages your pods. kubectl is your remote control talking to Kubernetes' API from the outside. Every other concept — Services, rolling updates, label selectors — is detail layered on top of that foundation.
+
+---
+
 ## Troubleshooting Log (Kubernetes-specific)
 
 | Problem | Cause | Fix |
