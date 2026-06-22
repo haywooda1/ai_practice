@@ -701,7 +701,10 @@ The `--cached` flag is critical — removes from Git without touching the filesy
 | `kind` or `kubectl` not found after Intel → ARM migration | Homebrew PATH changed (`/opt/homebrew/bin` on ARM vs `/usr/local/bin` on Intel) or tools not reinstalled | `brew install kind && brew install kubectl`; confirm with `which kind` |
 | `docker build` fails with "requires 1 argument" | Missing build context path (the trailing `.`) | Always end `docker build -t name:tag .` with a space and `.` for current directory, or provide explicit path |
 
+| `argocd-applicationset-controller` in `CrashLoopBackOff` with "no matches for kind ApplicationSet" in logs | `applicationsets.argoproj.io` CRD missing from cluster — lost during cluster recreation | Check with `kubectl get crd | grep argoproj`; if missing, register with `kubectl create -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.4.4/manifests/crds/applicationset-crd.yaml`; if `kubectl apply` fails with "Too long" annotation error, use `kubectl create` or `kubectl apply --server-side` instead |
+| ArgoCD CRD too large for `kubectl apply` — "metadata.annotations: Too long: may not be more than 262144 bytes" | `kubectl apply` stores last-applied config as an annotation; large CRDs like ApplicationSet exceed the 256KB limit | Use `kubectl create` (first time) or `kubectl apply --server-side` (idempotent) instead of standard `kubectl apply` |
+
 ---
 
-*Last updated: June 2026*
+*Last updated: June 22, 2026*
 *Repo: github.com/haywooda1/ai_practice*
