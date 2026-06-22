@@ -627,6 +627,36 @@ Two pods appear — one old, one new (43 seconds old in practice) — without a 
 
 ---
 
+### Understanding the ArgoCD visual graph
+
+The ArgoCD UI shows a visual graph of every resource it manages. Here's what each layer means for `my-app`:
+
+```
+ArgoCD Application (my-app)
+  ├── Service (my-app-svc)          — peer of Deployment, not below it
+  └── Deployment (my-app)          — desired state declaration
+        ├── ReplicaSet rev1         — previous version, 0 pods, kept for rollback
+        └── ReplicaSet rev2         — current version, 2 pods running
+              ├── Pod 1
+              └── Pod 2
+```
+
+**ArgoCD Application** — the top-level object is ArgoCD's own construct, not a Kubernetes resource. It represents "I am responsible for watching this repo and managing everything below this point."
+
+**Service** — shown as a sibling of the Deployment, not below it, because they're peers in Kubernetes — neither owns the other. The Service selects the same pods the Deployment manages via label selectors. ArgoCD shows them as siblings because both came from the same Git folder, managed by the same Application.
+
+**Deployment** — the familiar object that declares desired state: "I want N replicas of this container image running." Importantly, the Deployment doesn't manage pods directly — it manages ReplicaSets, which in turn manage pods.
+
+**ReplicaSets (rev1, rev2)** — the layer most people don't realize exists. A ReplicaSet is the object that actually owns and manages pods directly. Every rolling update creates a brand new ReplicaSet for the new version and gradually scales it up while scaling the old one down. The old ReplicaSet (rev1) stays around at **zero replicas** as a rollback safety net — `kubectl rollout undo` just scales rev1 back up and rev2 back down, which is why rollbacks are near-instant. Nothing is rebuilt; Kubernetes just shifts which ReplicaSet is active.
+
+**Pods** — only appear under the current active ReplicaSet (rev2). rev1 sits at zero pods but is retained specifically for rollback capability.
+
+**Why this matters for interviews**: If asked "how do rolling updates work in Kubernetes," the complete answer involves ReplicaSets: "Kubernetes creates a new ReplicaSet for each version, scales it up while scaling the old one down, and retains the old ReplicaSet at zero replicas to enable instant rollback." This is stronger than "it replaces pods one at a time" — which is true but incomplete.
+
+**Settings → Repositories in ArgoCD UI** — your repo doesn't appear here because it's public. ArgoCD fetched it anonymously without needing stored credentials. Settings → Repositories is where you register **private** repos with credentials (SSH key, GitHub token) so ArgoCD can authenticate. In production, repos are almost always private and would be registered here. For public repos, ArgoCD uses the URL embedded in the app spec directly without a formal registered connection.
+
+---
+
 ### Git repo hygiene for ArgoCD
 
 ArgoCD refuses to process repos containing out-of-bounds symlinks (symlinks pointing outside the repo boundary) — it flags these as a security concern to prevent path traversal attacks.
