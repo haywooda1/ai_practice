@@ -430,6 +430,231 @@ Clusters are disposable — cheap to destroy, cheap to recreate. Don't leave the
 
 ---
 
+## ArgoCD & GitOps — installation and configuration
+
+### What ArgoCD is and why it matters
+ArgoCD is a GitOps controller that runs *inside* your Kubernetes cluster and watches a Git repo. When the repo changes, ArgoCD automatically reconciles the cluster to match — replacing manual `kubectl apply` commands with a continuous, automated sync loop. Git becomes the single source of truth; ArgoCD is the engine that enforces it.
+
+The full GitOps flow:
+```
+You edit YAML → push to GitHub → ArgoCD detects change → applies it to cluster
+```
+Vs. the manual flow you started with:
+```
+You run kubectl create / kubectl set image → cluster changes
+```
+
+**Interview pitch**: "GitOps replaces imperative kubectl commands with declarative Git-driven reconciliation — same change control discipline as release readiness gates, but enforced automatically by a controller rather than a manual process."
+
+---
+
+### Where to find Kubernetes tooling
+The authoritative resource for the cloud-native ecosystem is the **CNCF Landscape**: `landscape.cncf.io`. The Cloud Native Computing Foundation governs Kubernetes and most tools built around it. Tools are organized by category (CI/CD, observability, storage, security) and tiered by maturity:
+- **Graduated** — production-proven, widely adopted (Kubernetes, Prometheus, ArgoCD)
+- **Incubating** — growing adoption, still maturing
+- **Sandbox** — early stage, experimental
+
+For production infrastructure, always prefer Graduated or well-established Incubating projects. ArgoCD and Flux are the two dominant GitOps controllers — both Graduated. ArgoCD has broader adoption and a more mature UI, making it the better starting point.
+
+For any specific tool: search CNCF Landscape for the category → find the GitHub repo → README has install instructions.
+
+---
+
+### Installing ArgoCD into the cluster
+
+ArgoCD runs as pods in its own namespace — a logical partition inside the cluster, not a new container or node:
+
+```bash
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
+
+The install URL comes from ArgoCD's official getting started docs: `argo-cd.readthedocs.io/en/stable/getting_started/`. The `stable` in the path always points to the latest stable release. Before running `kubectl apply -f <url>` in production, open the URL in a browser first and read what it creates — it's applying cluster-level resources and you should understand what they are.
+
+Watch pods come up (takes 2-3 minutes on first install):
+```bash
+kubectl get pods -n argocd --watch
+```
+
+Expected pods — all should reach `Running`:
+- `argocd-server` — the API server and UI
+- `argocd-repo-server` — clones and reads Git repos
+- `argocd-application-controller` — the reconciliation engine
+- `argocd-redis` — caching layer
+- `argocd-dex-server` — SSO/authentication
+- `argocd-applicationset-controller` — manages sets of applications
+- `argocd-notifications-controller` — handles alerting
+
+**Expected behavior on first install**: `dex-server` and `applicationset-controller` commonly show `Error` or `CrashLoopBackOff` briefly on startup due to dependency race conditions (dex needs Redis fully ready before it can initialize). Both self-heal within a few minutes — same reconciliation loop as everything else in Kubernetes. Only investigate if they stay in `CrashLoopBackOff` for more than 5 minutes.
+
+---
+
+### Namespaces — important concept
+
+A namespace is a **logical boundary** inside Kubernetes, not a container or node. No new compute spins up when you create one — it's purely organizational, like a folder. Resources in different namespaces are isolated from each other within the same cluster.
+
+```bash
+kubectl get pods                    # only shows default namespace
+kubectl get pods -n argocd          # shows argocd namespace
+kubectl get pods --all-namespaces   # shows everything
+```
+
+ArgoCD itself lives in the `argocd` namespace. Your application (`my-app`) lives in `default`. These are intentionally separate — ArgoCD is the manager in its own office, reaching out to manage workers on a different floor. In production you'd deploy into namespaces like `production`, `staging`, or team-specific partitions, keeping GitOps tooling cleanly separated from workloads.
+
+---
+
+### Accessing the ArgoCD UI
+
+```bash
+# port-forward to reach the UI from your Mac (occupies the terminal)
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+
+Get the auto-generated admin password (stored as a Kubernetes Secret):
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
+Breaking that command down:
+- `get secret argocd-initial-admin-secret` — retrieves the Secret object ArgoCD created during install
+- `-o jsonpath="{.data.password}"` — extracts just the password field from the full JSON object
+- `| base64 -d` — decodes it from base64 (Kubernetes Secrets store values base64-encoded, not encrypted — real security comes from RBAC and etcd encryption at rest)
+
+Open `https://localhost:8080` in browser. Accept the certificate warning (self-signed cert in a local cluster, expected). Login: `admin` / <password from above>.
+
+---
+
+### Kubernetes manifest files (replacing kubectl commands with YAML)
+
+Instead of `kubectl create deployment` and `kubectl expose`, you declare the same desired state as YAML files that ArgoCD reads from Git:
+
+**`k8s-manifests/deployment.yaml`**:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-k8s-app
+        image: my-k8s-app:v3
+        ports:
+        - containerPort: 80
+```
+
+**`k8s-manifests/service.yaml`**:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+spec:
+  selector:
+    app: my-app
+  ports:
+  - port: 80
+    targetPort: 80
+  type: NodePort
+```
+
+These files live in the repo at `k8s-manifests/` — ArgoCD watches that specific folder, not the whole repo.
+
+---
+
+### Connecting ArgoCD to GitHub (UI method)
+
+In the ArgoCD dashboard → **+ New App**:
+
+| Field | Value | Why |
+|---|---|---|
+| Application Name | `my-app` | identifies this app in ArgoCD |
+| Project | `default` | ArgoCD's own grouping concept |
+| Sync Policy | `Automatic` | ArgoCD applies Git changes without manual intervention |
+| Self Heal | checked | reverts any manual kubectl drift back to Git state |
+| Repository URL | `https://github.com/haywooda1/ai_practice` | where to watch |
+| Revision | `HEAD` | always track latest commit on default branch |
+| Path | `k8s-manifests` | specific folder to watch, not whole repo |
+| Cluster URL | `https://kubernetes.default.svc` | deploy into the same cluster ArgoCD runs in |
+| Namespace | `default` | where YOUR app's resources go (not where ArgoCD lives) |
+
+**The namespace distinction**: ArgoCD lives in `argocd` namespace. The destination namespace (`default`) is where ArgoCD deploys *your* application resources. These are always separate — ArgoCD's home vs. where it manages work.
+
+---
+
+### ArgoCD status indicators
+
+- **Synced** — what's in Git matches what's in the cluster
+- **OutOfSync** — Git and cluster have drifted (change detected but not yet applied)
+- **Healthy** — the actual resources are running correctly
+- **Degraded** — resources exist but aren't functioning correctly
+
+With `Automatic` sync + `Self Heal` enabled, `OutOfSync` should be transient — ArgoCD applies the change and returns to `Synced` automatically.
+
+---
+
+### Proving the GitOps loop works
+
+Make a change in Git and watch ArgoCD apply it without any kubectl commands:
+
+```bash
+# edit k8s-manifests/deployment.yaml — change replicas: 1 to replicas: 2
+git add k8s-manifests/deployment.yaml
+git commit -m "Scale my-app to 2 replicas"
+git push origin main
+```
+
+In the ArgoCD UI, click **Refresh** to force an immediate sync (default poll interval is 3 minutes). Watch the app card go `OutOfSync` → `Synced`, and the visual graph update from 1 pod to 2.
+
+Confirm from terminal:
+```bash
+kubectl get pods
+```
+
+Two pods appear — one old, one new (43 seconds old in practice) — without a single kubectl command after the push. That's the GitOps loop confirmed.
+
+**Interview summary**: "I edited a YAML file, pushed it to GitHub, and ArgoCD detected the change and reconciled the cluster to match — scaling from 1 to 2 replicas automatically. No manual kubectl commands after the initial setup."
+
+---
+
+### Git repo hygiene for ArgoCD
+
+ArgoCD refuses to process repos containing out-of-bounds symlinks (symlinks pointing outside the repo boundary) — it flags these as a security concern to prevent path traversal attacks.
+
+Common culprit: symlinks to local Mac files used by Python scripts (e.g. `fidelity_export.csv -> /Users/Adam/Documents/...`). Fix: remove from Git tracking without deleting the actual file:
+
+```bash
+# check what's tracked
+git ls-files
+
+# remove symlinks from tracking (keeps the file on disk)
+git rm --cached fidelity_export.csv
+git rm --cached capitalgroup.csv
+
+# prevent re-adding
+echo "fidelity_export.csv" >> .gitignore
+echo "capitalgroup.csv" >> .gitignore
+echo ".DS_Store" >> .gitignore
+
+git add .gitignore
+git commit -m "Remove out-of-bounds symlinks from git tracking"
+git push origin main
+```
+
+The `--cached` flag is critical — removes from Git without touching the filesystem. Python scripts that depend on those symlinks continue working unchanged.
+
+---
+
 ## Troubleshooting Log (Kubernetes-specific)
 
 | Problem | Cause | Fix |
