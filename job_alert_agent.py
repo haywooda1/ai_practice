@@ -679,7 +679,7 @@ def main():
         return
 
     all_jobs      = []
-    since_str     = (datetime.now() - timedelta(days=7)).strftime("%d-%b-%Y")
+    since_str     = (datetime.now() - timedelta(days=5)).strftime("%d-%b-%Y")
     source_counts = {"LinkedIn": 0, "Indeed": 0}
 
     for sender, source in ALL_SENDERS:
