@@ -12,6 +12,30 @@ load_dotenv()
 
 client = anthropic.Anthropic()
 
+# ── Token usage tracker ──────────────────────────────────────────
+token_log = {"input": 0, "output": 0}
+
+def log_usage(response):
+    """Accumulate token usage from any API response."""
+    token_log["input"]  += response.usage.input_tokens
+    token_log["output"] += response.usage.output_tokens
+
+def print_token_summary(job_count):
+    """Print token usage and estimated cost at end of run."""
+    input_cost  = token_log["input"]  / 1_000_000 * 3.00
+    output_cost = token_log["output"] / 1_000_000 * 15.00
+    total_cost  = input_cost + output_cost
+    print(f"\n{'='*60}")
+    print(f"  TOKEN USAGE")
+    print(f"{'='*60}")
+    print(f"  Jobs scored:  {job_count}")
+    print(f"  Input:        {token_log['input']:,} tokens  (${input_cost:.4f})")
+    print(f"  Output:       {token_log['output']:,} tokens  (${output_cost:.4f})")
+    print(f"  Total:        ${total_cost:.4f} this run")
+    print(f"  Per job:      ${total_cost/max(job_count,1):.4f} avg")
+    print(f"  Model:        claude-sonnet-4-5")
+# ─────────────────────────────────────────────────────────────────
+
 # ─────────────────────────────────────────────
 # Adam's background — used for scoring each job
 # ─────────────────────────────────────────────
@@ -320,6 +344,7 @@ Return ONLY valid JSON. Example:
     )
 
     text = response.content[0].text.strip()
+    log_usage(response)  # ← track tokens
     try:
         match = re.search(r'\{.*\}', text, re.DOTALL)
         if match:
@@ -327,6 +352,7 @@ Return ONLY valid JSON. Example:
     except Exception:
         pass
 
+    log_usage(response)  # ← track tokens — already called above
     return {
         "title_fit": 0, "skill_match": 0,
         "seniority_level": 0, "industry_fit": 0,
@@ -757,6 +783,8 @@ def main():
         print(f"          {job['location']}")
         print(f"          {s['recommendation']} — {s['why_good'][:70]}")
         print()
+
+    print_token_summary(len(unique_jobs))  # ← show token cost at end
 
 
 if __name__ == "__main__":
