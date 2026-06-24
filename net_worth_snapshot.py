@@ -60,11 +60,11 @@ TAXABLE_POSITIONS = {
     "NVDA": {"name": "NVIDIA",                "shares": 25,  "note": ""},
     "NVO":  {"name": "Novo Nordisk",          "shares": 5,   "note": ""},
     "NVTS": {"name": "Navitas Semiconductor", "shares": 200, "note": ""},
-    "QBTS": {"name": "D-Wave Quantum",        "shares": 168, "note": ""},
-    "RIOT": {"name": "Riot Platforms",        "shares": 30,  "note": ""},
+    "QBTS": {"name": "D-Wave Quantum",        "shares": 180, "note": ""},
+    "RIOT": {"name": "Riot Platforms",        "shares": 50,  "note": ""},
     "RIVN": {"name": "Rivian",                "shares": 100, "note": ""},
     "SOFI": {"name": "SoFi Technologies",     "shares": 150, "note": ""},
-    "ZS":   {"name": "Zscaler",               "shares": 9,   "note": ""},
+    "ZS":   {"name": "Zscaler",               "shares": 14,   "note": ""},
     "NTAP":  {"name": "NetApp", "shares": 1928,   "note": ""},
     # Add / remove tickers as needed
 }
