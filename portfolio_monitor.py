@@ -32,14 +32,36 @@ POSITIONS = {
     "NVDA": {"name": "NVIDIA",                "shares": 25,  "cost_basis": 120.45},
     "NVO":  {"name": "Novo Nordisk",          "shares": 5,   "cost_basis": 147.254},
     "NVTS": {"name": "Navitas Semiconductor", "shares": 200, "cost_basis": 15.145},
-    "QBTS": {"name": "D-Wave Quantum",        "shares": 168, "cost_basis": 9.517976},
-    "RIOT": {"name": "Riot Platforms",        "shares": 30,  "cost_basis": 10.22},
+    "QBTS": {"name": "D-Wave Quantum",        "shares": 180, "cost_basis": 9.517976},
+    "RIOT": {"name": "Riot Platforms",        "shares": 50,  "cost_basis": 10.22},
     "RIVN": {"name": "Rivian",                "shares": 100, "cost_basis": 12.64},
     "SOFI": {"name": "SoFi Technologies",     "shares": 150, "cost_basis": 9.30},
-    "ZS":   {"name": "Zscaler",               "shares": 9,   "cost_basis": 133.41},
+    "ZS":   {"name": "Zscaler",               "shares": 14,   "cost_basis": 133.41},
 }
 
 client = anthropic.Anthropic()
+
+# ── Token usage tracker ──────────────────────────────────────────
+token_log = {"input": 0, "output": 0}
+
+def log_usage(response):
+    """Accumulate token usage from any API response."""
+    token_log["input"]  += response.usage.input_tokens
+    token_log["output"] += response.usage.output_tokens
+
+def print_token_summary():
+    """Print token usage and estimated cost at end of run."""
+    input_cost  = token_log["input"]  / 1_000_000 * 3.00
+    output_cost = token_log["output"] / 1_000_000 * 15.00
+    total_cost  = input_cost + output_cost
+    print(f"\n{'='*60}")
+    print(f"  TOKEN USAGE")
+    print(f"{'='*60}")
+    print(f"  Input:  {token_log['input']:,} tokens  (${input_cost:.4f})")
+    print(f"  Output: {token_log['output']:,} tokens  (${output_cost:.4f})")
+    print(f"  Total:  ${total_cost:.4f} this run")
+    print(f"  Model:  claude-sonnet-4-5")
+# ─────────────────────────────────────────────────────────────────
 
 
 def format_currency(val):
@@ -494,6 +516,7 @@ Important guidelines:
                         f"{datetime.now().strftime('%B %d, %Y')}:\n\n{portfolio_summary}")
         }]
     )
+    log_usage(message)  # ← track tokens
     return message.content[0].text
 
 
@@ -559,6 +582,7 @@ def main():
         f.write(full_plain)
         f.write(f"\n\nAI ANALYSIS:\n{ai_analysis}")
     print(f"\n💾 Report saved to: {report_file}")
+    print_token_summary()  # ← show token cost at end
 
 
 if __name__ == "__main__":

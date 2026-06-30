@@ -80,6 +80,33 @@ git pull                # pull latest from GitHub
 git push origin main --verbose  # push with detailed error output
 ```
 
+### Comparing Local vs GitHub
+```bash
+git status                          # see uncommitted local changes
+git diff filename.py                # see exact line-by-line differences vs last commit
+git fetch                           # check GitHub for changes without merging
+git diff origin/main -- filename.py # compare local file vs GitHub's current version
+git log --oneline filename.py       # see commit history for one specific file
+```
+
+After `git fetch`, `git status` tells you the relationship to GitHub:
+- `up to date with origin/main` → local matches GitHub
+- `ahead of origin/main by N commits` → you have local commits not yet pushed
+- `behind origin/main by N commits` → GitHub has changes you don't have locally
+- `diverged` → both sides have different changes — needs a merge
+
+### Pulling a Single File from GitHub
+To update just one or two local files to match GitHub without touching
+anything else in the repo (overwrites local changes to that file):
+```bash
+git fetch origin
+git checkout origin/main -- filename.py
+```
+Useful when you only need to sync specific scripts rather than the whole repo.
+⚠️ This discards any uncommitted local changes to that file — check
+`git diff filename.py` first if unsure what you'd be losing.
+```
+
 ### .gitignore — What to Always Exclude
 ```
 .env                  # API keys — NEVER commit
