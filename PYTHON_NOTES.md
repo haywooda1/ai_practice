@@ -606,4 +606,338 @@ for item in items:
 | `ModuleNotFoundError` | Library not installed in active venv | `pip install <package>` with venv active |
 
 ---
-*Last updated: 2026-06-24*
+
+## Classes, Dataclasses & Decorators
+
+### Type Hints — Labels, Not Enforcement
+
+```python
+def parse_news_item(raw: dict) -> NewsItem | None:
+```
+
+Type hints are **passive annotations** — Python ignores them at runtime.
+They exist to communicate intent to humans and tools like VS Code autocomplete.
+
+| Hint | Meaning |
+|---|---|
+| `param: str` | This parameter should be a string |
+| `param: dict` | This parameter should be a dictionary |
+| `-> str` | This function returns a string |
+| `-> list[str]` | Returns a list where every item is a string |
+| `-> NewsItem \| None` | Returns either a NewsItem object or None |
+
+The `|` means "or" — called a **union type**. Common for functions that
+might not always have something valid to return.
+
+Removing all type hints doesn't change behavior — only readability:
+```python
+def parse_news_item(raw):   # identical behavior, less self-documenting
+```
+
+---
+
+### `@dataclass` — Auto-Generated Classes
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class NewsItem:
+    title:     str
+    published: str
+    link:      str
+```
+
+A `class` is a blueprint for a custom data type — an object that bundles
+related pieces of data together. Without `@dataclass` you'd write boilerplate
+by hand:
+```python
+# What @dataclass generates automatically:
+class NewsItem:
+    def __init__(self, title, published, link):
+        self.title     = title
+        self.published = published
+        self.link      = link
+```
+
+**Creating and using an instance:**
+```python
+item = NewsItem(title="NVDA Surges", published="2026-06-15", link="https://...")
+print(item.title)      # "NVDA Surges"
+```
+
+**Why a dataclass instead of a plain dict?**
+- VS Code autocompletes `item.title` — it knows the field names exist
+- Harder to misspell a key name than with `item["titel"]`
+- Reads cleaner: `item.title` vs `item["title"]`
+
+---
+
+### Decorators — The `@` Syntax
+
+A decorator wraps a function or class and adds behavior to it automatically.
+The `@` symbol is always the signal.
+
+```python
+@dataclass          # ← decorator
+class NewsItem:
+    ...
+```
+
+`@dataclass` is Python's built-in decorator that auto-generates class setup
+code. You'll also see `@staticmethod`, `@classmethod`, `@property`, and
+custom decorators in libraries. Recognize the pattern: "this class/function
+has been enhanced by something" — you don't need to know how it works
+internally to use it correctly.
+
+---
+
+### Dunder Methods — `__init__`, `__name__`, etc.
+
+**Dunder** = "double underscore" on both sides. Python calls these
+automatically in response to built-in operations — you don't call them
+directly yourself.
+
+| Dunder | Triggered by | What it does |
+|---|---|---|
+| `__init__` | `MyClass(...)` | Initializes a new instance — the constructor |
+| `__str__` | `print(obj)` or `str(obj)` | How to display the object as a string |
+| `__len__` | `len(obj)` | What to return for the object's length |
+| `__eq__` | `obj1 == obj2` | How to compare two objects for equality |
+| `__repr__` | In the REPL or debugger | Developer-readable representation |
+
+**`__init__` — the constructor:**
+```python
+class NewsItem:
+    def __init__(self, title, published, link):
+        self.title     = title    # store input as instance attribute
+        self.published = published
+        self.link      = link
+
+# Python calls __init__ automatically — you never call it directly:
+item = NewsItem("NVDA Surges", "2026-06-15", "https://...")
+#               ↑ triggers __init__ with these three values
+```
+
+**`__name__` — the module identity variable:**
+```python
+if __name__ == "__main__":
+    main()
+```
+When Python runs a script **directly** (`python3 script.py`), it sets
+`__name__` to `"__main__"`. When a script is **imported** by another script,
+`__name__` is set to the module's filename instead.
+
+This guard means: "only run `main()` if this file is run directly, not if
+it's imported." All your scripts have this at the bottom.
+
+**General rule:** when you see `__something__`, ask "what built-in operation
+triggers this?" not "how do I call this?"
+
+---
+
+### Variable Scope — Parameters vs Arguments
+
+**Parameters** are the names defined inside a function signature.
+**Arguments** are the actual values passed in by the caller. The names
+on each side are completely independent — only position matters.
+
+```python
+# "raw" is the PARAMETER — chosen by the function author
+def parse_news_item(raw: dict) -> NewsItem | None:
+    content = raw.get("content") or {}
+
+# "raw_news" is the ARGUMENT — chosen by the caller
+raw_news = {"title": "NVDA Surges", ...}
+item = parse_news_item(raw_news)
+```
+
+When called, Python binds the argument to the parameter name behind the
+scenes:
+```python
+raw = raw_news   # happens automatically
+```
+
+The caller could name their variable anything — `abc_news`, `my_data`, `x`
+— and inside the function it's still accessed as `raw`, because that's
+what the function defined.
+
+```
+CALLER SIDE          │  FUNCTION SIDE
+─────────────────────┼──────────────────
+raw_news  ──────────►│  raw
+abc_news  ──────────►│  raw     (same thing)
+my_data   ──────────►│  raw     (same thing)
+```
+
+**Scope** means variables inside a function only exist inside that function
+— they don't leak out, and outside variables don't leak in.
+
+**Analogy:** a vending machine doesn't care if you call your dollar "my
+crumpled bill" or "the one in my pocket." Inside the machine it's just
+"input currency."
+
+---
+
+### `or` as a Value Selector (not just True/False)
+
+Python's `or` returns the **first truthy value it finds**, or the last
+value if none are truthy — not just `True`/`False`.
+
+```python
+None  or "hello"        # → "hello"
+""    or "hello"        # → "hello"
+"hi"  or "hello"        # → "hi"   (first truthy wins)
+None  or None  or ""   # → ""    (last value if all falsy)
+```
+
+**Used as a waterfall of fallbacks:**
+```python
+title = (
+    content.get("title")    # try here first
+    or raw.get("title")     # fall back to here
+    or ""                   # final default
+).strip()
+```
+
+**Used as a safe default:**
+```python
+content = raw.get("content") or {}   # if None, use empty dict instead
+```
+
+**Truthiness** — these are all falsy (evaluate to False in an `if`):
+```python
+None, "", 0, 0.0, [], {}, set()
+```
+Everything else is truthy — why `if line.strip()` works as an emptiness
+check without `if line.strip() != ""`.
+
+---
+
+### Early Return / Guard Clause
+
+Check for bad/invalid input at the top of a function and bail out
+immediately rather than letting bad data flow deeper into the code.
+
+```python
+def parse_news_item(raw: dict) -> NewsItem | None:
+    content = raw.get("content") or {}
+    title = (content.get("title") or raw.get("title") or "").strip()
+
+    if not title:
+        return None    # ← early return / guard clause
+
+    # everything below here is guaranteed to have a valid title
+```
+
+The calling code handles the `None`:
+```python
+for raw_item in news_list:
+    item = parse_news_item(raw_item)
+    if item is None:
+        continue    # skip this one, move to next
+    print(item.title)   # safe — we know it's a real NewsItem
+```
+
+**Why guard clauses matter:** they flatten the code. Without them you'd
+have deeply nested `if/else` blocks. With them, the happy path stays at
+the top level and edge cases exit early.
+
+---
+
+### List Comprehensions
+
+A compact way to build a list by looping and optionally filtering — all
+in one expression.
+
+```python
+# Regular for loop:
+result = []
+for line in lines:
+    stripped = line.strip()
+    if stripped:
+        result.append(stripped)
+
+# Equivalent list comprehension — same result, one line:
+result = [line.strip() for line in lines if line.strip()]
+```
+
+**The structure:**
+```python
+[ expression   for item in iterable   if condition ]
+#  ↑ output      ↑ loop                 ↑ filter (optional)
+```
+
+**Common examples:**
+```python
+[x * 2 for x in [1, 2, 3]]          # → [2, 4, 6]
+[s for s in words if len(s) > 3]    # → keep only strings longer than 3 chars
+[job["title"] for job in jobs]      # → extract one field from a list of dicts
+[l.strip() for l in lines if l.strip()]   # ← used in read_text_to_list
+```
+
+Use list comprehensions when the logic is simple and fits on one line.
+Use a regular for loop when the logic is complex or needs multiple steps
+— readability matters more than brevity.
+
+---
+
+## Token Usage Tracking
+
+Every `client.messages.create()` response includes a `usage` attribute
+with token counts. This pattern is added to `portfolio_monitor.py`,
+`job_assistant.py`, and `job_alert_agent.py`.
+
+```python
+# After client = anthropic.Anthropic()
+token_log = {"input": 0, "output": 0}
+
+def log_usage(response):
+    """Accumulate token usage from any API response."""
+    token_log["input"]  += response.usage.input_tokens
+    token_log["output"] += response.usage.output_tokens
+
+def print_token_summary():
+    """Print token usage and estimated cost at end of run."""
+    input_cost  = token_log["input"]  / 1_000_000 * 3.00
+    output_cost = token_log["output"] / 1_000_000 * 15.00
+    total       = input_cost + output_cost
+    print(f"Input:  {token_log['input']:,} tokens  (${input_cost:.4f})")
+    print(f"Output: {token_log['output']:,} tokens  (${output_cost:.4f})")
+    print(f"Total:  ${total:.4f} this run")
+```
+
+**Call `log_usage` after every API call, `print_token_summary` at the end of `main()`:**
+```python
+message = client.messages.create(...)
+log_usage(message)              # right after the call
+return message.content[0].text
+
+# ... at the very end of main():
+print_token_summary()
+```
+
+**Where `response.usage` comes from** — the Message object has multiple
+attributes; `usage` is one of them, same pattern as `content[0].text`:
+```
+Message
+  ├── content[0].text   ← the text Claude wrote
+  ├── model             ← "claude-sonnet-4-5"
+  ├── stop_reason       ← why Claude stopped
+  └── usage
+        ├── input_tokens   ← tokens your prompt used
+        └── output_tokens  ← tokens Claude's response used
+```
+
+**Pricing for `claude-sonnet-4-5`:** $3.00 / 1M input tokens,
+$15.00 / 1M output tokens. Check current pricing at
+`console.anthropic.com/settings/billing`.
+
+**Discover what's on any response object:**
+```python
+message = client.messages.create(...)
+print(message)   # prints the full object — shows all available attributes
+```
+
+---
+*Last updated: 2026-06-25*

@@ -105,7 +105,92 @@ git checkout origin/main -- filename.py
 Useful when you only need to sync specific scripts rather than the whole repo.
 ⚠️ This discards any uncommitted local changes to that file — check
 `git diff filename.py` first if unsure what you'd be losing.
+
+### Resolving a Diverged Branch
+Happens when you work across multiple machines (e.g. switching between an
+Intel Mac and an M3 Mac) without syncing in between — both local and GitHub
+end up with commits the other doesn't have.
+
+**Recognizing it:**
+```bash
+git status
+# "Your branch and 'origin/main' have diverged,
+#  and have 2 and 14 different commits each, respectively."
 ```
+
+**Step 1 — inspect both sides before touching anything:**
+```bash
+git log origin/main..HEAD --oneline   # commits only on your machine
+git log HEAD..origin/main --oneline   # commits only on GitHub
+git log origin/main -- filename.md --oneline  # check if a specific file
+                                                # exists in GitHub's history
+```
+This lets you confirm nothing important will be lost before merging.
+
+**Step 2 — merge both histories together:**
+```bash
+git pull origin main --no-rebase
+```
+Pulls down the missing commits and combines them with your local ones into
+a merge commit. If nothing conflicts, this completes automatically.
+
+**Common blockers during this merge, in the order they tend to appear:**
+
+1. **Untracked files blocking the merge**
+   ```
+   error: The following untracked working tree files would be overwritten by merge
+   ```
+   Files exist locally but were never `git add`ed, and GitHub has files at
+   the same path. Fix (once you've confirmed GitHub's version is the one
+   you want):
+   ```bash
+   rm path/to/file1
+   rm path/to/file2
+   git pull origin main --no-rebase
+   ```
+
+2. **Staged-but-uncommitted files blocking the merge**
+   ```
+   error: Your local changes to the following files would be overwritten by merge
+   ```
+   Files were `git add`ed but never committed. Fix:
+   ```bash
+   git restore --staged path/to/file1 path/to/file2
+   rm path/to/file1 path/to/file2
+   git status        # confirm clean
+   git pull origin main --no-rebase
+   ```
+
+3. **A genuine merge conflict on a tracked file**
+   ```
+   CONFLICT (modify/delete): .DS_Store deleted in <hash> and modified in HEAD.
+   Automatic merge failed; fix conflicts and then commit the result.
+   ```
+   For a file you don't actually need (like macOS's `.DS_Store`), accept
+   the deletion:
+   ```bash
+   git rm .DS_Store
+   git status                          # confirm no other conflicts remain
+   git commit -m "Merge GitHub history with local commits"
+   git push origin main
+   ```
+   For a real content conflict, git marks the conflicting lines directly in
+   the file with `<<<<<<<`, `=======`, `>>>>>>>` markers — edit the file to
+   keep the correct content, remove the markers, then `git add` the file and
+   `git commit`.
+
+**Step 3 — prevent recurrence:**
+```bash
+echo ".DS_Store" >> .gitignore
+git add .gitignore
+git commit -m "Add .DS_Store to gitignore"
+git push origin main
+```
+
+**Lesson learned:** always `git pull` (or at least `git fetch` + `git status`)
+at the *start* of a session on any machine, especially after switching
+laptops/architectures — catches divergence early before it grows to dozens
+of commits on either side.
 
 ### .gitignore — What to Always Exclude
 ```
@@ -115,6 +200,7 @@ cover_letters/        # personal job applications
 portfolio_reports/    # financial reports
 job_digests/          # LinkedIn job digests
 __pycache__/          # Python cache files
+.DS_Store             # macOS Finder metadata — never useful in a repo
 ```
 
 ### .env File Pattern
@@ -359,6 +445,10 @@ since = datetime.now() - timedelta(days=7)
 since_str = since.strftime("%d-%b-%Y")  # "22-May-2026" — IMAP format
 ```
 
+> 📌 See `PYTHON_NOTES.md` for deeper Python concepts: classes, `@dataclass`,
+> decorators, dunder methods (`__init__`, `__name__`), variable scope,
+> list comprehensions, and token usage tracking.
+
 ---
 
 ## 4. Claude API
@@ -418,6 +508,11 @@ client.beta.messages   # experimental features
 python3 -c "import anthropic; help(anthropic.Anthropic)"
 ```
 
+### Token Usage Tracking
+See `PYTHON_NOTES.md` for the full pattern — added to `portfolio_monitor.py`,
+`job_assistant.py`, and `job_alert_agent.py` to print token counts and
+estimated cost at the end of every run.
+
 ---
 
 ## 5. MCP Servers
@@ -463,6 +558,18 @@ Test it in Claude Desktop:
 | Google Drive | Access Drive files |
 | Brave Search | Real-time web search |
 
+### MCP Server Reliability Notes
+- Large `edit_file` calls on big files can time out the local MCP server.
+  If a call times out, **restart Claude Desktop** (`Cmd+Q` then reopen)
+  before retrying — don't assume the edit silently succeeded or failed.
+- After any timeout, re-read the file before continuing to confirm its
+  actual state — don't trust the last-known content in conversation.
+- For large additions, prefer reading the whole file and using `write_file`
+  to rewrite it in one shot, rather than many small `edit_file` calls that
+  can drift out of sync with the file's real content.
+- Always re-view a file immediately before editing it — content shown
+  earlier in a long conversation may be stale.
+
 ---
 
 ## 6. Agents Built
@@ -483,9 +590,9 @@ python3 job_assistant.py
 ```
 
 **Key concepts:** system prompts, multi-line input, file saving with timestamps,
-`os.makedirs`, `MY_BACKGROUND` as resume context
+`os.makedirs`, `MY_BACKGROUND` as resume context, token usage tracking
 
-**Output:** Saves to `cover_letters/YYYYMMDD_HHMMSS_job-title.txt`
+**Output:** Saves to `cover_letters/YYYYMMDD_HHMMSS_job-title.docx`
 
 **Positioning notes:**
 - AI framing: "I work directly with AI tools daily — including Claude API and
@@ -514,7 +621,7 @@ python3 portfolio_monitor.py
 **Your Positions:**
 | Ticker | Shares | Cost Basis |
 |---|---|---|
-| NTAP | 1,900 | ESPP/RSU mix — see Etrade |
+| NTAP | 1,928 | ESPP/RSU mix — see Etrade |
 | CDE | 150 | $14.996 |
 | HIMS | 100 | $25.45 |
 | LAC | 50 | $7.156 |
@@ -525,14 +632,14 @@ python3 portfolio_monitor.py
 | QBTS | 168 | $9.518 |
 | RIOT | 30 | $10.22 |
 | RIVN | 100 | $12.64 |
-| SOFI | 100 | $9.30 |
+| SOFI | 150 | $9.30 |
 | ZS | 9 | $133.41 |
 
 **Note:** 200 NTAP RSU shares (grant RS100768, vest Aug 2026) forfeited — excluded.
-~82 additional ESPP shares expected end of May 2026.
 
 **Data source:** `yfinance` (free, no API key, pulls from Yahoo Finance)
-**Key concepts:** dictionary loops, `.items()`, f-strings, HTML email, SMTP, cron
+**Key concepts:** dictionary loops, `.items()`, f-strings, HTML email, SMTP, cron,
+token usage tracking
 
 ---
 
@@ -557,6 +664,7 @@ python3 job_alert_agent.py
 - Industry Fit — enterprise tech, cloud, AI/ML, storage?
 
 **Threshold:** Jobs scoring 60+ are included. Change `SCORE_THRESHOLD` in script.
+**Search window:** currently 5 days back (adjusted from original 7).
 
 **Gmail setup needed:**
 - Yahoo Mail → forward LinkedIn alerts to Gmail
@@ -564,7 +672,8 @@ python3 job_alert_agent.py
 - Gmail App Password → myaccount.google.com → Security → App Passwords
 
 **Key concepts:** IMAP email reading, regex parsing, heuristic text extraction,
-JSON scoring via Claude, HTML digest, deduplication
+JSON scoring via Claude, HTML digest, deduplication, token usage tracking
+(prints cost per job scored)
 
 **Positioning notes:** same AI framing and Navy-removal as Agent 2 — `MY_BACKGROUND`
 should stay consistent across both agents since it drives scoring and cover letters.
@@ -587,6 +696,9 @@ python3 net_worth_snapshot.py
 
 **Key concepts:** combining multiple data sources into one report, pandas CSV
 parsing, `index_col=False`, disclaimer-footer stripping, account grouping
+
+**Known issue resolved:** Fidelity CSV column misalignment — see Pandas section
+above and Troubleshooting Log for the `index_col=False` fix.
 
 ---
 
@@ -654,6 +766,12 @@ pip3 show anthropic        # show package details
 | Push rejected — secrets | API key in a commit | Remove from commit history, rotate the key |
 | `pd.read_csv` columns shifted left by one | First CSV column absorbed as DataFrame index instead of staying a column | Add `index_col=False` to `pd.read_csv()` |
 | `groupby()` returns wrong values (e.g. symbols instead of account names) | Often a symptom of the column-shift issue above — check with `df[["col1","col2"]].to_string()` | Fix the underlying `read_csv` call, not the groupby |
+| `ModuleNotFoundError` after switching Macs (Intel ↔ M3) | venv built for the wrong CPU architecture | `rm -rf venv` then rebuild: `python3 -m venv venv`, activate, `pip install` everything again |
+| `anthropic.BadRequestError: credit balance too low` | Anthropic account ran out of API credits | console.anthropic.com → Plans & Billing → add credits; consider setting a monthly spend limit |
+| `git status` shows "branches have diverged" | Worked on two machines without syncing in between | See "Resolving a Diverged Branch" in Section 2 — inspect both sides, then `git pull origin main --no-rebase` |
+| Merge blocked by untracked/staged files | Local files exist at same path as incoming GitHub files | `git restore --staged <file>` if staged, then `rm <file>`, then retry the pull |
+| `CONFLICT (modify/delete): .DS_Store` | macOS metadata file tracked accidentally, deleted on one side | `git rm .DS_Store`, commit the merge, then add `.DS_Store` to `.gitignore` permanently |
+| MCP filesystem tool times out on large edits | Edit payload too large for one call | Restart Claude Desktop, re-read the file to confirm state, retry with `write_file` (full rewrite) instead of many small edits |
 
 ---
 
