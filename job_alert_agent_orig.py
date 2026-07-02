@@ -42,7 +42,7 @@ def print_token_summary(job_count):
 MY_BACKGROUND = """
 Name: Adam Haywood
 Location: Raleigh-Durham, NC (open to remote, hybrid, or on-site in RDU area)
-Resume Title: Engineering Leader — Platform Engineering, Distributed Storage Systems & Infrastructure Reliability
+Resume Title: Engineering Leader — Platform Delivery, Reliability & Engineering Operations
 
 TARGET ROLES (in priority order):
 1. Senior Engineering Manager — Platform, DevOps, SRE, Quality Engineering, or Enablement (PRIMARY TARGET)
@@ -58,23 +58,33 @@ A "Engineering Manager, Platform Reliability" with real organizational ownership
 as well as a title with a more senior-sounding label. Title text is a signal, not a gate.
 
 SUMMARY:
-Engineering leader with 25+ years building and leading teams across distributed storage platforms, multi-vendor infrastructure, and enterprise-scale system reliability. Led globally distributed engineering organizations of 28 across multiple time zones, directing platform validation, hardware and multi-OS qualification, and the release governance that kept complex, multi-vendor systems reliable through pre-release testing. Technical depth comes from two decades of close, hands-on involvement with storage systems architecture, platform validation, and CI/CD automation - paired with working knowledge of Python for scripting and automation, and a track record of operating fluently across hardware, firmware, and software boundaries. Proven track record leading AI/ML-enabled engineering modernization, driving cross-functional technical roadmaps, and partnering with product, architecture, and vendor stakeholders to deliver reliable systems at scale.
+Engineering leader with 25+ years of experience leading platform delivery, production
+reliability, quality engineering, and partner enablement at enterprise scale. Owned the
+engineering operations and delivery governance that directly enabled $94.5M in quarterly
+revenue. Proven track record building and scaling high-performing engineering teams,
+operationalizing AI-enabled automation, and establishing the SDLC governance, CI/CD
+practices, and operational excellence standards that ensure production-grade systems
+perform under load. Strong credibility in distributed systems, cross-functional
+leadership, and engineering change management — with a hands-on approach to both
+people and craft.
 
 CORE COMPETENCIES:
-Distributed Systems & Storage Platform Engineering
-•	Platform Validation & Hardware Qualification: Multi-OS qualification, system bring-up, performance characterization, and interoperability testing across complex, multi-vendor environments
-•	Qualification & Interoperability Validation: Directed pre-release validation of new systems, firmware, and platforms across complex, multi-vendor environments - ensuring reliable, defect-free interoperability before customer deployment
-•	CI/CD & Engineering Automation: Pipeline design, release governance, quality gates, and automation tooling supporting high-velocity, high-reliability delivery
-•	Technical Fluency: Hands-on history with storage, networking, and multi-platform systems (Solaris, RHEL, AIX, HP-UX, Windows); working knowledge of Python for scripting and automation; comfortable reading and reasoning about code across languages
-Engineering Leadership & Operations
-•	Multi-Team Org Leadership: Built and scaled globally distributed orgs of 28, including senior engineers; multi-charter ownership across platform delivery, quality engineering, and partner enablement
-•	AI/ML Engineering Modernization: Led strategy and operationalization of AI-enabled automation including multi-agent failure triage; hands-on with AI tooling
-•	Cross-Functional Influence: Cross-functional portfolio council leadership - driving investment prioritization and roadmap alignment across Product, Architecture, Vendor, and Program Management stakeholders
-•	Financial & Vendor Governance: Capex/Opex planning, SOW negotiation, and OEM/vendor oversight aligned to long-term platform roadmap
-
+- Platform Engineering & Delivery Leadership
+- Production Reliability & Site Operations
+- Quality Engineering at Enterprise Scale
+- SDLC Governance & Release Engineering
+- CI/CD Pipelines & Engineering Automation
+- AI/ML-Enabled Engineering Modernization
+- Capex/Opex Planning & Vendor Governance
+- Engineering Talent Strategy & Org Development
+- Cross-Functional Leadership: Product, Program, Architecture
+- Distributed Systems, APIs & Multi-Platform Integration
 
 EXPERIENCE SCALE (most recent role):
-Directed a globally distributed engineering organization of 28 - owning platform delivery readiness, infrastructure governance, AI-enabled automation, and engineering standards supporting enterprise customer deployments
+Directed a globally distributed engineering organization of 28 (10 FTEs + 18 contingent
+engineers) across multiple time zones. Owned delivery governance, quality standards, and
+release controls for revenue-critical platform releases. Served on cross-functional
+portfolio councils driving investment prioritization and risk governance.
 
 DOMAIN DEPTH: Enterprise storage/infrastructure (NetApp ONTAP, SAN/NAS), distributed
               systems, multi-platform interoperability (Solaris, RHEL, AIX, HP-UX, Windows),
@@ -82,14 +92,14 @@ DOMAIN DEPTH: Enterprise storage/infrastructure (NetApp ONTAP, SAN/NAS), distrib
 
 AI LEADERSHIP & HANDS-ON PRACTICE:
 Actively building AI-powered tools daily using the Claude API and LLM-driven workflows.
-Led strategy and operationalization of AI-enabled automation including multi-agent
+Led strategy and operationalization of AI/ML-enabled automation including multi-agent
 failure triage. Able to direct AI strategy and translate it for both engineers and executives.
 
 SENIORITY: Senior Manager is the primary target level. Director is a welcome stretch but
            not a requirement — do not penalize a role for being titled "Manager" if the
            described scope (team size, delivery ownership, cross-functional reach) matches
            or exceeds Senior Manager-level responsibility.
-INDUSTRY FIT: Enterprise tech, cloud infrastructure, platform/SRE, AI, storage,
+INDUSTRY FIT: Enterprise tech, cloud infrastructure, platform/SRE, AI/ML, storage,
               networking, DevOps tooling, developer platforms
 NOT A FIT: Individual contributor (IC) engineering roles, pure software development,
            SWE / Staff Engineer roles requiring hands-on coding as primary output,
