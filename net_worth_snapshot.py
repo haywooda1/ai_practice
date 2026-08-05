@@ -86,7 +86,7 @@ def clean_currency(value_str):
     """Convert dollar strings like '$93,192.07' or '($0.09)' to float."""
     if pd.isna(value_str) or str(value_str).strip() in ("", "--", "N/A"):
         return 0.0
-    s = str(value_str).strip()
+    s = str(value_str).strip().strip("'")
     negative = s.startswith("(") and s.endswith(")")
     s = s.replace("(", "").replace(")", "").replace("$", "").replace(",", "").strip()
     try:
