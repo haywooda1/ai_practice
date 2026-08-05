@@ -772,6 +772,7 @@ pip3 show anthropic        # show package details
 | Merge blocked by untracked/staged files | Local files exist at same path as incoming GitHub files | `git restore --staged <file>` if staged, then `rm <file>`, then retry the pull |
 | `CONFLICT (modify/delete): .DS_Store` | macOS metadata file tracked accidentally, deleted on one side | `git rm .DS_Store`, commit the merge, then add `.DS_Store` to `.gitignore` permanently |
 | MCP filesystem tool times out on large edits | Edit payload too large for one call | Restart Claude Desktop, re-read the file to confirm state, retry with `write_file` (full rewrite) instead of many small edits |
+| CSV currency values parsing as `0.0` despite looking correct | Export tool wraps values in single quotes e.g. `'$775.59 '` — `float()` can't parse them | Use `repr()` to reveal hidden characters, then add `.strip("'")` in the currency parsing function before stripping `$` and `,` |
 
 ---
 
