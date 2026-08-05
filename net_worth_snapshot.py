@@ -58,7 +58,6 @@ TAXABLE_POSITIONS = {
     "LAC":  {"name": "Lithium Americas",      "shares": 50,  "note": ""},
     "NTSK": {"name": "NetSTAKE",              "shares": 90,  "note": ""},
     "NVDA": {"name": "NVIDIA",                "shares": 25,  "note": ""},
-    "NVO":  {"name": "Novo Nordisk",          "shares": 5,   "note": ""},
     "NVTS": {"name": "Navitas Semiconductor", "shares": 200, "note": ""},
     "QBTS": {"name": "D-Wave Quantum",        "shares": 180, "note": ""},
     "RIOT": {"name": "Riot Platforms",        "shares": 50,  "note": ""},
@@ -130,25 +129,25 @@ def parse_fidelity_csv(csv_path):
     # as the DataFrame index, which would shift all other columns left by one
     df = pd.read_csv(io.StringIO("\n".join(data_lines)), index_col=False)
 
-    # Normalize column names (strip whitespace)
-    df.columns = [c.strip() for c in df.columns]
+    # Normalize column names (strip whitespace and adjust lowercase to eliminate inconsistencies) 
+    df.columns = [c.strip().lower() for c in df.columns]
 
     # Drop rows where Account Name is missing
-    df = df.dropna(subset=["Account Name"])
+    df = df.dropna(subset=["account name"])
 
     accounts = {}
-    for account_name, group in df.groupby("Account Name"):
+    for account_name, group in df.groupby("account name"):
         holdings = []
         total = 0.0
         for _, row in group.iterrows():
-            symbol      = str(row.get("Symbol", "")).strip()
-            description = str(row.get("Description", "")).strip()
-            qty         = pd.to_numeric(row.get("Quantity", None), errors="coerce")
-            price       = clean_currency(row.get("Last Price", 0))
-            value       = clean_currency(row.get("Current Value", 0))
-            day_gain    = clean_currency(row.get("Today's Gain/Loss Dollar", 0))
-            total_gain  = clean_currency(row.get("Total Gain/Loss Dollar", 0))
-            cost_basis  = clean_currency(row.get("Cost Basis Total", 0))
+            symbol      = str(row.get("symbol", "")).strip()
+            description = str(row.get("description", "")).strip()
+            qty         = pd.to_numeric(row.get("quantity", None), errors="coerce")
+            price       = clean_currency(row.get("last price", 0))
+            value       = clean_currency(row.get("current value", 0))
+            day_gain    = clean_currency(row.get("today's gain/loss dollar", 0))
+            total_gain  = clean_currency(row.get("total gain/loss dollar", 0))
+            cost_basis  = clean_currency(row.get("cost basis total", 0))
 
             total += value
             holdings.append({

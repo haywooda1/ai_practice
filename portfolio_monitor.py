@@ -30,7 +30,6 @@ POSITIONS = {
     "LAC":  {"name": "Lithium Americas",      "shares": 50,  "cost_basis": 7.1558},
     "NTSK": {"name": "NetSTAKE",              "shares": 90,  "cost_basis": 21.33},
     "NVDA": {"name": "NVIDIA",                "shares": 25,  "cost_basis": 120.45},
-    "NVO":  {"name": "Novo Nordisk",          "shares": 5,   "cost_basis": 147.254},
     "NVTS": {"name": "Navitas Semiconductor", "shares": 200, "cost_basis": 15.145},
     "QBTS": {"name": "D-Wave Quantum",        "shares": 180, "cost_basis": 9.517976},
     "RIOT": {"name": "Riot Platforms",        "shares": 50,  "cost_basis": 10.22},
