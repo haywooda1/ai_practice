@@ -1,7 +1,8 @@
 import anthropic
 from dotenv import load_dotenv
-# Load your API key from .env
-load_dotenv()
+from pathlib import Path
+# Load .env relative to this script's location, regardless of cwd
+load_dotenv(Path(__file__).parent / ".env")
 # Create a client — it auto-reads ANTHROPIC_API_KEY
 client = anthropic.Anthropic()
 # Send a message to Claude
