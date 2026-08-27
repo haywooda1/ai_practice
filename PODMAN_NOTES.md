@@ -195,11 +195,11 @@ Without this, companies needed an engineer to manually configure each server, ba
 
 ---
 
-## Interview context (DGX Cloud relevance)
+## Enterprise relevance
 
-NVIDIA's infrastructure almost certainly runs on Linux — likely RHEL or a derivative — which means there's a real chance their internal tooling uses Podman or supports it. Being able to articulate: "I've worked with Docker and understand the architectural differences with Podman — specifically the security implications of the daemonless rootless model and what a migration involves" shows ecosystem awareness rather than knowledge of just one tool.
+Many enterprise Linux environments (RHEL and derivatives) default to Podman, so understanding the architectural differences with Docker is broadly useful platform-engineering context, not just interview material. Being able to articulate the daemonless/rootless security model and what a migration involves shows ecosystem awareness rather than knowledge of just one tool.
 
-**Strong interview answer on Docker vs Podman migration covers three things:**
+**A solid answer on Docker vs Podman migration covers three things:**
 1. OCI image format compatibility makes migration technically straightforward for most workloads
 2. Real effort is in daemon-dependent pieces (auto-start, socket compatibility, compose files)
 3. Rootless default is a security improvement but requires auditing containers built assuming root access
@@ -219,5 +219,5 @@ The business case for migrating is strongest in security-regulated environments 
 
 ---
 
-*Last updated: June 22, 2026*
+*Last updated: August 27, 2026 (reviewed/consolidated after DDN offer accepted; general reference going forward)*
 *Repo: github.com/haywooda1/ai_practice*

@@ -1,9 +1,31 @@
 # Kubernetes & GitOps Fluency Notes
 
-*For NVIDIA DGX Cloud EM role prep*
+*General hands-on reference — platform engineering skill-building (DDN)*
 
 ## Why this file exists
-DGX Cloud EM role calls for Kubernetes operability, automation, GitOps, observability. Goal is interview-level fluency and hands-on familiarity — not operational mastery. Practicing on a local kind cluster, not production Kubernetes.
+Building Kubernetes operability, automation, and GitOps fluency relevant to platform engineering work. Goal is solid hands-on familiarity through repetition — not production operational mastery. Practicing on a local kind cluster, not production Kubernetes.
+
+---
+
+## Contents
+
+- [Why this file exists](#why-this-file-exists)
+- [Core concept: reconciliation](#core-concept-reconciliation)
+- [Vocabulary, mapped to storage/SAN background](#vocabulary-mapped-to-storagesan-background)
+- [GitOps concept](#gitops-concept)
+- [Local cluster setup (kind)](#local-cluster-setup-kind)
+- [Client/daemon pattern (shows up at every layer)](#clientdaemon-pattern-shows-up-at-every-layer)
+- [Image name resolution (Docker and Kubernetes share this)](#image-name-resolution-docker-and-kubernetes-share-this)
+- [kubectl contexts (multi-cluster management)](#kubectl-contexts-multi-cluster-management)
+- [Deployments, scaling, self-healing](#deployments-scaling-self-healing)
+- [Services and load balancing](#services-and-load-balancing)
+- [Building and deploying a custom image](#building-and-deploying-a-custom-image)
+- [Architecture transition: Intel → ARM (Apple Silicon)](#architecture-transition-intel-arm-apple-silicon)
+- [Cleanup](#cleanup)
+- [GitOps next steps (ArgoCD) — in progress](#gitops-next-steps-argocd-in-progress)
+- [End-to-end runbook: Docker running → app live in Kubernetes](#end-to-end-runbook-docker-running-app-live-in-kubernetes)
+- [ArgoCD & GitOps — installation and configuration](#argocd-gitops-installation-and-configuration)
+- [Troubleshooting Log (Kubernetes-specific)](#troubleshooting-log-kubernetes-specific)
 
 ---
 
@@ -706,5 +728,5 @@ The `--cached` flag is critical — removes from Git without touching the filesy
 
 ---
 
-*Last updated: June 22, 2026*
+*Last updated: August 27, 2026 (reviewed/consolidated after DDN offer accepted; general reference going forward)*
 *Repo: github.com/haywooda1/ai_practice*
